@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brújula Interior</title>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0805;--surface:#0e0c07;--surface2:#131008;
+  --border:#1e1b10;--border2:#2e2918;
+  --gold:#c09840;--gold-d:#6b5520;--gold-b:#deba58;
+  --cream:#cbc09e;--muted:#574f36;--text:#b8ad8e;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--cream);font-family:'Courier Prime',monospace;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 50% 0%,transparent 0%,#07060460 100%);pointer-events:none;z-index:0}
+
+/* NAV TABS */
+.nav{position:sticky;top:0;z-index:50;background:#0a0805ee;border-bottom:1px solid var(--border);backdrop-filter:blur(8px)}
+.nav-inner{max-width:780px;margin:0 auto;display:flex;overflow-x:auto;scrollbar-width:none}
+.nav-inner::-webkit-scrollbar{display:none}
+.nav-tab{flex-shrink:0;padding:12px 18px;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap}
+.nav-tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+.nav-tab:hover{color:var(--cream)}
+
+/* PAGES */
+.page{display:none;animation:fadeUp .4s ease both}
+.page.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* HERO */
+.hero{position:relative;text-align:center;padding:48px 24px 32px;z-index:1}
+.hero-eyebrow{font-size:9px;letter-spacing:6px;color:var(--muted);text-transform:uppercase;margin-bottom:32px}
+.compass-wrap{position:relative;width:190px;height:190px;margin:0 auto 28px}
+.compass-ring{position:absolute;inset:0;border-radius:50%;border:1px solid var(--border2);animation:spin-slow 60s linear infinite}
+.compass-ring-inner{position:absolute;inset:13px;border-radius:50%;border:1px solid var(--gold-d);animation:spin-slow 40s linear infinite reverse}
+@keyframes spin-slow{to{transform:rotate(360deg)}}
+.compass-svg{width:100%;height:100%;position:absolute;inset:0;z-index:2}
+.compass-cardinal{position:absolute;font-family:'IM Fell English',serif;font-size:10px;color:var(--gold-d);z-index:4}
+.compass-cardinal.n{top:1px;left:50%;transform:translateX(-50%)}
+.compass-cardinal.s{bottom:1px;left:50%;transform:translateX(-50%)}
+.compass-cardinal.e{right:2px;top:50%;transform:translateY(-50%)}
+.compass-cardinal.w{left:2px;top:50%;transform:translateY(-50%)}
+.compass-center{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:5}
+.needle-wrap{width:4px;height:68px;position:relative;transform-origin:50% 50%;animation:needle-settle 2.4s cubic-bezier(.25,1.5,.5,1) both}
+@keyframes needle-settle{0%{transform:rotate(-200deg)}100%{transform:rotate(var(--needle-deg,0deg))}}
+.needle-n{position:absolute;top:0;left:50%;transform:translateX(-50%);width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:34px solid var(--gold);filter:drop-shadow(0 0 4px #c0984060)}
+.needle-s{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:34px solid var(--muted)}
+.needle-dot{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:8px;height:8px;border-radius:50%;background:var(--gold-b);box-shadow:0 0 8px #deba5880}
+.glyph-svg{position:absolute;inset:26px;opacity:0.13;z-index:1}
+h1{font-family:'IM Fell English',serif;font-size:clamp(22px,5vw,38px);color:var(--gold);letter-spacing:5px;text-transform:uppercase;line-height:1.15;margin-bottom:6px}
+.hero-sub{font-size:10px;color:var(--muted);letter-spacing:5px;text-transform:uppercase}
+.hero-date{margin-top:16px;font-family:'IM Fell English',serif;font-size:14px;color:var(--gold-d);font-style:italic;letter-spacing:2px}
+
+/* LIVE TICKER */
+.live-ticker{max-width:780px;margin:0 auto;padding:0 18px 4px;display:flex;gap:2px;flex-wrap:wrap;z-index:1;position:relative}
+.ticker-item{background:var(--surface);border:1px solid var(--border);padding:8px 14px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:8px}
+.ticker-item span{color:var(--gold);font-family:'IM Fell English',serif;font-size:13px;letter-spacing:0}
+.ticker-dot{width:5px;height:5px;border-radius:50%;background:var(--gold);animation:pulse 2s ease infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+
+/* WRAP */
+.wrap{max-width:780px;margin:0 auto;padding:0 18px 80px;position:relative;z-index:1}
+
+/* SINTESIS */
+.sintesis-box{background:var(--surface);border:1px solid var(--gold-d);padding:28px;margin-bottom:2px;position:relative}
+.sintesis-box::before{content:'✦';position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--bg);padding:0 12px;color:var(--gold-d);font-size:12px}
+.sintesis-label{font-size:8px;letter-spacing:4px;text-transform:uppercase;color:var(--gold-d);margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.sintesis-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.sintesis-text{font-family:'IM Fell English',serif;font-size:15px;color:var(--cream);line-height:1.9;font-style:italic}
+
+/* MAP */
+.map-section{margin:40px 0}
+.section-label{font-size:9px;letter-spacing:5px;text-transform:uppercase;color:var(--muted);text-align:center;margin-bottom:22px;display:flex;align-items:center;gap:12px}
+.section-label::before,.section-label::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--border2),transparent)}
+.symbolic-map{position:relative;width:100%;max-width:500px;aspect-ratio:1;margin:0 auto;opacity:0;transition:opacity .8s ease}
+.symbolic-map.visible{opacity:1}
+.map-svg{width:100%;height:100%}
+
+/* CARDS */
+.oracle-grid{display:grid;gap:2px;margin-bottom:2px}
+.oracle-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:2px}
+.card{background:var(--surface);border:1px solid var(--border);padding:22px 24px;position:relative;cursor:pointer;transition:border-color .25s,background .25s;user-select:none;-webkit-tap-highlight-color:transparent}
+.card:hover{border-color:var(--border2);background:#110e08}
+.card:active{background:#161208}
+.tap-hint{position:absolute;bottom:9px;right:12px;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--gold-d);opacity:0.55;display:flex;align-items:center;gap:3px}
+.tap-hint::before{content:'↗';font-size:9px}
+.card-sys{font-size:8px;letter-spacing:4px;text-transform:uppercase;color:var(--muted);margin-bottom:11px;display:flex;align-items:center;gap:10px}
+.card-sys::after{content:'';flex:1;height:1px;background:var(--border)}
+.card-num{position:absolute;top:20px;right:20px;font-family:'IM Fell English',serif;font-size:42px;color:var(--border2);line-height:1;user-select:none}
+.card-title{font-family:'IM Fell English',serif;font-size:19px;color:var(--gold);margin-bottom:3px;line-height:1.2}
+.card-kw{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--gold-d);margin-bottom:10px}
+.card-desc{font-size:12px;color:var(--text);line-height:1.8;font-style:italic}
+.card-calc{font-size:10px;color:var(--muted);margin-top:7px;letter-spacing:1px}
+.swatch{display:flex;align-items:center;gap:12px;margin-top:10px}
+.swatch-box{width:32px;height:32px;border:1px solid var(--border2)}
+.swatch-name{font-size:13px;color:var(--gold);letter-spacing:1px}
+.swatch-sub{font-size:10px;color:var(--muted);margin-top:1px}
+.tarot-wrap{display:flex;gap:14px;align-items:flex-start;margin-top:4px}
+.tarot-mini{width:46px;height:76px;border:1px solid var(--gold-d);display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative}
+.tarot-mini::before{content:'';position:absolute;inset:3px;border:1px solid var(--border2)}
+.tarot-roman{font-family:'IM Fell English',serif;font-size:14px;color:var(--gold);z-index:1}
+.kin-row{display:flex;gap:16px;flex-wrap:wrap;margin-top:8px}
+.kin-it{flex:1;min-width:80px}
+.kin-lbl{font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+.kin-val{font-family:'IM Fell English',serif;font-size:14px;color:var(--gold)}
+.kin-sub{font-size:10px;color:var(--muted);font-style:italic;margin-top:1px}
+.planet-sym{font-size:30px;margin-bottom:4px;opacity:0.5}
+.luna-sym{font-size:40px;line-height:1;margin-bottom:5px;opacity:0.7}
+.zodiac-sym{font-size:34px;line-height:1;margin-bottom:4px;opacity:0.6}
+.year-big{font-family:'IM Fell English',serif;font-size:64px;color:var(--gold-d);line-height:1;margin:6px 0;opacity:0.6}
+.highlight-card{border-color:var(--gold-d)!important;background:#0c0a05!important}
+.highlight-card .card-title{color:var(--gold-b)}
+
+/* INPUT */
+.input-block{background:var(--surface);border:1px solid var(--border);padding:24px;margin-bottom:2px}
+.input-block-title{font-family:'IM Fell English',serif;font-size:12px;color:var(--gold-d);letter-spacing:3px;text-transform:uppercase;text-align:center;margin-bottom:16px}
+.input-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.ig{flex:1;min-width:70px}
+.ig label{display:block;font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+.ig input,.ig select{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--cream);font-family:'Courier Prime',monospace;font-size:12px;padding:8px 10px;outline:none;transition:border-color .3s}
+.ig input:focus,.ig select:focus{border-color:var(--gold-d)}
+.ig input::placeholder{color:var(--muted);opacity:.4}
+.ig select option{background:var(--bg)}
+.btn{background:transparent;border:1px solid var(--gold-d);color:var(--gold);font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:3px;text-transform:uppercase;padding:9px 16px;cursor:pointer;transition:all .3s;white-space:nowrap}
+.btn:hover{background:var(--gold-d);color:var(--bg)}
+
+/* NOMBRE BREAKDOWN */
+.nombre-breakdown{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin-top:2px}
+.nb-item{background:var(--surface2);border:1px solid var(--border);padding:16px 12px;text-align:center;cursor:pointer;transition:border-color .25s}
+.nb-item:hover{border-color:var(--border2)}
+.nb-num{font-family:'IM Fell English',serif;font-size:36px;color:var(--gold);line-height:1;margin-bottom:3px}
+.nb-lbl{font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--muted)}
+.nb-name{font-family:'IM Fell English',serif;font-size:11px;color:var(--cream);margin-top:3px}
+.nb-kw{font-size:8px;color:var(--gold-d);margin-top:2px;letter-spacing:1px}
+.compat-bar{margin-top:12px;height:2px;background:var(--border);position:relative;overflow:hidden}
+.compat-fill{position:absolute;left:0;top:0;height:100%;background:var(--gold);transition:width 1.2s ease}
+.placeholder{border:1px dashed var(--border);padding:28px;text-align:center;color:var(--muted);font-size:11px;letter-spacing:2px;font-style:italic}
+
+/* CALENDARIO */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-top:16px}
+.cal-header{text-align:center;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding:6px 0}
+.cal-day{background:var(--surface);border:1px solid var(--border);padding:6px 4px;text-align:center;cursor:pointer;transition:border-color .2s;min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:2px}
+.cal-day:hover{border-color:var(--border2)}
+.cal-day.today{border-color:var(--gold-d)}
+.cal-day.peak{border-color:var(--gold)!important;background:#14110800}
+.cal-day.empty{background:transparent;border-color:transparent;cursor:default}
+.cal-day-num{font-family:'IM Fell English',serif;font-size:13px;color:var(--cream)}
+.cal-day.today .cal-day-num{color:var(--gold)}
+.cal-day-vib{width:16px;height:4px;border-radius:1px;margin-top:2px}
+.cal-day-n{font-size:8px;color:var(--muted);letter-spacing:0}
+.cal-peak-label{font-size:7px;color:var(--gold);letter-spacing:1px;margin-top:1px}
+.cal-month-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.cal-month-title{font-family:'IM Fell English',serif;font-size:16px;color:var(--gold)}
+.cal-nav-btn{background:none;border:1px solid var(--border);color:var(--muted);font-family:'Courier Prime',monospace;font-size:10px;padding:4px 10px;cursor:pointer;transition:all .2s}
+.cal-nav-btn:hover{border-color:var(--border2);color:var(--cream)}
+
+/* DIARIO */
+.diario-entry{background:var(--surface);border:1px solid var(--border);padding:20px;margin-bottom:2px}
+.diario-entry-date{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--gold-d);margin-bottom:6px}
+.diario-entry-nums{font-size:10px;color:var(--muted);margin-bottom:8px;letter-spacing:1px}
+.diario-entry-text{font-size:13px;color:var(--text);line-height:1.7;font-style:italic}
+.diario-textarea{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--cream);font-family:'Courier Prime',monospace;font-size:13px;padding:12px;outline:none;resize:vertical;min-height:100px;line-height:1.7;transition:border-color .3s}
+.diario-textarea:focus{border-color:var(--gold-d)}
+.diario-empty{text-align:center;padding:40px;color:var(--muted);font-size:11px;letter-spacing:2px;font-style:italic}
+
+/* COMPAT */
+.compat-result{background:var(--surface);border:1px solid var(--border);padding:24px;margin-top:2px}
+.compat-score-wrap{text-align:center;padding:20px 0}
+.compat-score{font-family:'IM Fell English',serif;font-size:72px;color:var(--gold);line-height:1}
+.compat-score-label{font-size:9px;letter-spacing:4px;text-transform:uppercase;color:var(--muted);margin-top:4px}
+.compat-grid{display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-top:2px}
+.compat-item{background:var(--surface2);border:1px solid var(--border);padding:14px}
+.compat-item-label{font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.compat-item-value{font-family:'IM Fell English',serif;font-size:14px;color:var(--gold)}
+.compat-item-desc{font-size:11px;color:var(--text);margin-top:4px;font-style:italic;line-height:1.6}
+
+/* DRAWER */
+.drawer-overlay{position:fixed;inset:0;background:#00000090;z-index:100;opacity:0;pointer-events:none;transition:opacity .3s ease;backdrop-filter:blur(2px)}
+.drawer-overlay.open{opacity:1;pointer-events:all}
+.drawer{position:fixed;bottom:0;left:0;right:0;max-height:88vh;background:#0f0d08;border-top:1px solid var(--border2);z-index:101;transform:translateY(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);overflow:hidden;display:flex;flex-direction:column}
+.drawer.open{transform:translateY(0)}
+.drawer-handle{width:36px;height:3px;background:var(--border2);border-radius:2px;margin:11px auto 0;flex-shrink:0}
+.drawer-header{padding:14px 22px 12px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;flex-shrink:0}
+.drawer-system{font-size:8px;letter-spacing:4px;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+.drawer-title{font-family:'IM Fell English',serif;font-size:20px;color:var(--gold);line-height:1.2}
+.drawer-close{background:none;border:1px solid var(--border2);color:var(--muted);font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:2px;padding:5px 10px;cursor:pointer;flex-shrink:0;margin-left:14px;margin-top:3px;transition:all .2s}
+.drawer-close:hover{border-color:var(--gold-d);color:var(--gold)}
+.drawer-body{overflow-y:auto;padding:22px;flex:1;-webkit-overflow-scrolling:touch}
+.drawer-body::-webkit-scrollbar{width:2px}
+.drawer-body::-webkit-scrollbar-thumb{background:var(--border2)}
+.deep-section{margin-bottom:24px}
+.deep-section-title{font-size:8px;letter-spacing:4px;text-transform:uppercase;color:var(--gold-d);margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--border)}
+.deep-text{font-size:13px;color:var(--text);line-height:1.9;font-style:italic}
+.deep-text p{margin-bottom:10px}
+.deep-text p:last-child{margin-bottom:0}
+.deep-affirmation{margin-top:18px;padding:14px 18px;border:1px solid var(--gold-d);font-family:'IM Fell English',serif;font-size:14px;color:var(--gold);font-style:italic;line-height:1.6;text-align:center}
+.deep-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.deep-grid-item{padding:10px;border:1px solid var(--border);background:var(--surface2)}
+.deep-grid-label{font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+.deep-grid-value{font-family:'IM Fell English',serif;font-size:14px;color:var(--gold)}
+
+footer{text-align:center;padding:32px 24px 48px;border-top:1px solid var(--border);position:relative;z-index:1}
+footer p{font-size:9px;color:var(--muted);letter-spacing:4px;text-transform:uppercase;opacity:.4}
+
+@media(max-width:500px){
+  .oracle-grid-2,.nombre-breakdown,.compat-grid{grid-template-columns:1fr}
+  .card{padding:16px 14px}
+  .input-row{flex-direction:column}
+  .btn{width:100%}
+  .compass-wrap{width:160px;height:160px}
+}
+.fade-in{animation:fadeUp .5s ease both}
+</style>
+</head>
+<body>
+
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-handle"></div>
+  <div class="drawer-header">
+    <div><div class="drawer-system" id="drawerSystem"></div><div class="drawer-title" id="drawerTitle"></div></div>
+    <button class="drawer-close" onclick="closeDrawer()">cerrar ✕</button>
+  </div>
+  <div class="drawer-body" id="drawerBody"></div>
+</div>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="nav-tab active" onclick="showPage('hoy')">Hoy</div>
+    <div class="nav-tab" onclick="showPage('personal')">Personal</div>
+    <div class="nav-tab" onclick="showPage('nombre')">Nombre</div>
+    <div class="nav-tab" onclick="showPage('calendario')">Calendario</div>
+    <div class="nav-tab" onclick="showPage('compatibilidad')">Compatibilidad</div>
+    <div class="nav-tab" onclick="showPage('diario')">Diario</div>
+  </div>
+</nav>
+
+<!-- PAGE: HOY -->
+<div class="page active" id="page-hoy">
+  <div class="hero">
+    <div class="hero-eyebrow">Sistemas de lectura del tiempo</div>
+    <div class="compass-wrap">
+      <div class="compass-ring"></div><div class="compass-ring-inner"></div>
+      <svg class="glyph-svg" viewBox="0 0 160 160" id="glyphSvg"></svg>
+      <svg class="compass-svg" viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg">
+        <g stroke="#2e2918" stroke-width="1"><line x1="110" y1="10" x2="110" y2="22"/><line x1="110" y1="198" x2="110" y2="210"/><line x1="10" y1="110" x2="22" y2="110"/><line x1="198" y1="110" x2="210" y2="110"/></g>
+        <circle cx="110" cy="110" r="90" fill="none" stroke="#1e1b10" stroke-width="1"/>
+        <circle cx="110" cy="110" r="70" fill="none" stroke="#2e2918" stroke-width="0.5"/>
+        <circle cx="110" cy="110" r="50" fill="none" stroke="#1e1b10" stroke-width="1"/>
+        <g stroke="#2e2918" stroke-width="0.5">
+          <line x1="110" y1="20" x2="110" y2="30" transform="rotate(30 110 110)"/>
+          <line x1="110" y1="20" x2="110" y2="30" transform="rotate(60 110 110)"/>
+          <line x1="110" y1="20" x2="110" y2="30" transform="rotate(90 110 110)"/>
+          <line x1="110" y1="20" x2="110" y2="30" transform="rotate(120 110 110)"/>
+          <line x1="110" y1="20" x2="110" y2="30" transform="rotate(150 110 110)"/>
+          <line x1="110" y1="20" x2="110" y2="30" transform="rotate(180 110 110)"/>
+          <line x1="110" y1="20" x2="110" y2="30" transform="rotate(210 110 110)"/>
+          <line x1="110" y1="20" x2="110" y2="30" transform="rotate(240 110 110)"/>
+          <line x1="110" y1="20" x2="110" y2="30" transform="rotate(270 110 110)"/>
+          <line x1="110" y1="20" x2="110" y2="30" transform="rotate(300 110 110)"/>
+          <line x1="110" y1="20" x2="110" y2="30" transform="rotate(330 110 110)"/>
+        </g>
+        <polygon points="110,30 106,110 114,110" fill="#c09840" opacity="0.8"/>
+        <polygon points="110,190 106,110 114,110" fill="#3d3420" opacity="0.6"/>
+        <polygon points="190,110 110,106 110,114" fill="#2e2918" opacity="0.5"/>
+        <polygon points="30,110 110,106 110,114" fill="#2e2918" opacity="0.5"/>
+        <circle cx="110" cy="110" r="5" fill="#deba58" opacity="0.9"/>
+      </svg>
+      <div class="compass-center">
+        <div class="needle-wrap" id="needle"><div class="needle-n"></div><div class="needle-s"></div><div class="needle-dot"></div></div>
+      </div>
+      <span class="compass-cardinal n">N</span><span class="compass-cardinal s">S</span>
+      <span class="compass-cardinal e">E</span><span class="compass-cardinal w">O</span>
+    </div>
+    <h1>Brújula<br>Interior</h1>
+    <div class="hero-sub">Oráculo energético del tiempo</div>
+    <div class="hero-date" id="fechaHoy"></div>
+  </div>
+
+  <!-- LIVE TICKER -->
+  <div class="live-ticker">
+    <div class="ticker-item"><div class="ticker-dot"></div>hora planetaria <span id="tickerPlaneta">—</span></div>
+    <div class="ticker-item">próx. fase lunar <span id="tickerLuna">—</span></div>
+    <div class="ticker-item">signo lunar <span id="tickerSignoLunar">—</span></div>
+    <div class="ticker-item">próx. cambio hora <span id="tickerCambio">—</span></div>
+  </div>
+
+  <div class="wrap">
+    <!-- SÍNTESIS -->
+    <div class="sintesis-box fade-in" style="margin-top:32px">
+      <div class="sintesis-label">Síntesis del día</div>
+      <div class="sintesis-text" id="sintesisText">—</div>
+    </div>
+
+    <div class="map-section">
+      <div class="section-label">Mapa energético</div>
+      <div class="symbolic-map" id="symbolicMap">
+        <svg class="map-svg" viewBox="0 0 560 560" id="mapSvg"></svg>
+      </div>
+    </div>
+
+    <div class="section-label">Corrientes del día</div>
+    <div class="oracle-grid" id="cardsDia"></div>
+  </div>
+</div>
+
+<!-- PAGE: PERSONAL -->
+<div class="page" id="page-personal">
+  <div class="wrap" style="padding-top:32px">
+    <div class="section-label">Tu energía personal</div>
+    <div class="input-block">
+      <div class="input-block-title">Fecha de nacimiento</div>
+      <div class="input-row">
+        <div class="ig"><label>Día</label><input type="number" id="nDia" placeholder="DD" min="1" max="31"></div>
+        <div class="ig"><label>Mes</label><input type="number" id="nMes" placeholder="MM" min="1" max="12"></div>
+        <div class="ig"><label>Año</label><input type="number" id="nAnio" placeholder="AAAA" min="1900" max="2099"></div>
+        <button class="btn" onclick="calcPersonal()">Calcular</button>
+      </div>
+    </div>
+    <div id="cardsPersonal"><div class="placeholder">Ingresá tu fecha de nacimiento</div></div>
+  </div>
+</div>
+
+<!-- PAGE: NOMBRE -->
+<div class="page" id="page-nombre">
+  <div class="wrap" style="padding-top:32px">
+    <div class="section-label">Análisis del nombre</div>
+    <div class="input-block">
+      <div class="input-block-title">Nombre completo</div>
+      <div class="input-row">
+        <div class="ig" style="flex:3"><label>Nombre completo</label><input type="text" id="nNombre" placeholder="Como figura en tu documento" autocomplete="off"></div>
+        <button class="btn" onclick="calcNombre()">Calcular</button>
+      </div>
+    </div>
+    <div id="cardsNombre"><div class="placeholder">Ingresá tu nombre completo</div></div>
+  </div>
+</div>
+
+<!-- PAGE: CALENDARIO -->
+<div class="page" id="page-calendario">
+  <div class="wrap" style="padding-top:32px">
+    <div class="section-label">Calendario energético</div>
+    <div class="input-block" style="margin-bottom:16px">
+      <div class="input-block-title">Año personal para resaltar picos</div>
+      <div class="input-row">
+        <div class="ig"><label>Día nac.</label><input type="number" id="calDia" placeholder="DD" min="1" max="31"></div>
+        <div class="ig"><label>Mes nac.</label><input type="number" id="calMes" placeholder="MM" min="1" max="12"></div>
+        <div class="ig"><label>Año nac.</label><input type="number" id="calAnio" placeholder="AAAA"></div>
+        <button class="btn" onclick="renderCalendario()">Ver</button>
+      </div>
+    </div>
+    <div id="calContainer">
+      <div class="cal-month-nav">
+        <button class="cal-nav-btn" onclick="navCal(-1)">← ant</button>
+        <div class="cal-month-title" id="calMonthTitle"></div>
+        <button class="cal-nav-btn" onclick="navCal(1)">sig →</button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE: COMPATIBILIDAD -->
+<div class="page" id="page-compatibilidad">
+  <div class="wrap" style="padding-top:32px">
+    <div class="section-label">Compatibilidad energética</div>
+    <div class="input-block">
+      <div class="input-block-title">Persona A</div>
+      <div class="input-row">
+        <div class="ig"><label>Día</label><input type="number" id="caDia" placeholder="DD" min="1" max="31"></div>
+        <div class="ig"><label>Mes</label><input type="number" id="caMes" placeholder="MM" min="1" max="12"></div>
+        <div class="ig"><label>Año</label><input type="number" id="caAnio" placeholder="AAAA"></div>
+        <div class="ig" style="flex:2"><label>Nombre (opcional)</label><input type="text" id="caNombre" placeholder="Nombre"></div>
+      </div>
+    </div>
+    <div class="input-block">
+      <div class="input-block-title">Persona B</div>
+      <div class="input-row">
+        <div class="ig"><label>Día</label><input type="number" id="cbDia" placeholder="DD" min="1" max="31"></div>
+        <div class="ig"><label>Mes</label><input type="number" id="cbMes" placeholder="MM" min="1" max="12"></div>
+        <div class="ig"><label>Año</label><input type="number" id="cbAnio" placeholder="AAAA"></div>
+        <div class="ig" style="flex:2"><label>Nombre (opcional)</label><input type="text" id="cbNombre" placeholder="Nombre"></div>
+      </div>
+    </div>
+    <div style="text-align:center;padding:16px 0"><button class="btn" onclick="calcCompat()">Calcular compatibilidad</button></div>
+    <div id="compatResult"><div class="placeholder">Ingresá los datos de ambas personas</div></div>
+  </div>
+</div>
+
+<!-- PAGE: DIARIO -->
+<div class="page" id="page-diario">
+  <div class="wrap" style="padding-top:32px">
+    <div class="section-label">Diario energético</div>
+    <div class="input-block">
+      <div class="input-block-title" id="diarioFechaLabel"></div>
+      <textarea class="diario-textarea" id="diarioInput" placeholder="¿Cómo resonó la energía del día en vos?"></textarea>
+      <div style="text-align:right;margin-top:10px"><button class="btn" onclick="guardarDiario()">Guardar entrada</button></div>
+    </div>
+    <div id="diarioEntries"></div>
+  </div>
+</div>
+
+<footer><p>☽ Las corrientes como espejo, no como destino ☽</p></footer>
+
+<script>
+// ════════════════════════════════════════════════════
+// DATOS
+// ════════════════════════════════════════════════════
+
+const NUM={
+  1:{nombre:"El Iniciador",kw:"Inicio · Voluntad · Identidad",desc:"Energía de comienzos, voluntad pura, autonomía. Día propicio para tomar decisiones, lanzar proyectos, afirmar la dirección propia.",profundo:{esencia:"El 1 es la chispa antes del fuego. En la tradición pitagórica, la Mónada, el principio indivisible del que emana toda multiplicidad. No es el comienzo de algo: es el comienzo mismo.",energia:"Hoy la energía del campo es directa, concentrada, casi eléctrica. Hay una tendencia natural hacia la acción sin mediación, hacia la afirmación del yo sin excusas.",cuerpo:"La energía física tiende a la cabeza y la frente. Ideal para iniciar prácticas que requieran foco mental sostenido.",consejo:"Elegí una sola cosa hoy. No diez. Una. El 1 no dispersa, concentra.",sombra:"El 1 en su sombra se convierte en el yo que no puede ceder. La voluntad sin receptividad se vuelve rigidez.",afirmacion:"Hoy soy principio y dirección. Mi voluntad es clara y mi paso es firme."}},
+  2:{nombre:"El Receptor",kw:"Dualidad · Espera · Alianza",desc:"Energía de receptividad y cooperación. Día para escuchar, mediar, fortalecer vínculos y dejar que los procesos maduren.",profundo:{esencia:"La Díada. El espejo que necesita la Mónada para verse. El 2 introduce la relación, la tensión entre opuestos, el primer acto de reconocimiento del otro.",energia:"Hoy el campo pide receptividad. La acción forzada encontrará resistencia. Escuchar, recibir, permitir que las cosas se acerquen puede traer resultados inesperados.",cuerpo:"Relacionado con la pelvis y el sistema digestivo. Los rituales de conexión —cocinar, abrazar, compartir una mesa— son especialmente potentes hoy.",consejo:"Practica el silencio activo: estar presente sin llenar el espacio.",sombra:"La sombra del 2 es la dependencia, la indecisión que se disfraza de diplomacia.",afirmacion:"Hoy escucho con todo el cuerpo. Mi receptividad es mi fortaleza."}},
+  3:{nombre:"El Creador",kw:"Expresión · Creatividad · Gozo",desc:"Energía de expresión y expansión. Día para crear, comunicar, celebrar y dar forma a lo que estaba latente.",profundo:{esencia:"La Tríada: síntesis de los opuestos. El 1 y el 2 se encuentran y producen el 3. En geometría sagrada, el triángulo es la primera forma cerrada.",energia:"Hoy el campo es expansivo y social. Las ideas fluyen con más facilidad, las palabras tienen más peso, la expresión artística está especialmente potenciada.",cuerpo:"Garganta y sistema nervioso central. El sonido, la voz, el canto son prácticas especialmente alineadas.",consejo:"Crea algo hoy, lo que sea. El 3 pide que lo latente tome forma.",sombra:"La dispersión. El 3 sin disciplina se convierte en creatividad que empieza muchas cosas y termina pocas.",afirmacion:"Hoy doy forma a lo invisible. Mi expresión es un acto de creación."}},
+  4:{nombre:"El Constructor",kw:"Orden · Disciplina · Fundamento",desc:"Energía de trabajo y estructura. Día para organizar, sistematizar, edificar con método lo que se quiere que dure.",profundo:{esencia:"La Tétrada: la primera forma sólida, el cuadrado, los cuatro elementos. En Pitágoras, el 4 es la base del cosmos físico.",energia:"Hoy el campo pide trabajo real, tangible, sin atajos. Las tareas que requieren paciencia y atención al detalle son especialmente favorecidas.",cuerpo:"Huesos, articulaciones, estructura física. Prácticas de enraizamiento amplifican esta energía.",consejo:"Hacé la tarea que venías postergando. El 4 no promete magia, promete solidez.",sombra:"La rigidez, el perfeccionismo paralizante. El 4 en su sombra construye muros en lugar de fundamentos.",afirmacion:"Hoy construyo con paciencia y precisión. Lo que hago hoy dura."}},
+  5:{nombre:"El Liberador",kw:"Cambio · Movimiento · Libertad",desc:"Energía de cambio y ruptura. Día para explorar, viajar —físico o mental— y cuestionar lo establecido.",profundo:{esencia:"La Péntada: el número del ser humano, del pentágono, de la proporción áurea. El 5 introduce la vida en el esquema de los primeros cuatro números.",energia:"Hoy el campo es inquieto, vibrante, impredecible. Los planes pueden cambiar. La mejor postura es la del danzarín.",cuerpo:"Sistema nervioso y piel. El movimiento físico —correr, bailar, nadar— es la forma más directa de honrar este número.",consejo:"Salí de tu rutina hoy, aunque sea en un pequeño gesto. El 5 se activa con la novedad.",sombra:"La dispersión compulsiva, la huida del compromiso disfrazada de libertad.",afirmacion:"Hoy abrazo el movimiento. Mi libertad no me aleja, me lleva más lejos."}},
+  6:{nombre:"El Armonizador",kw:"Armonía · Servicio · Belleza",desc:"Energía de cuidado y responsabilidad. Día para sanar vínculos, atender el hogar interior y crear armonía.",profundo:{esencia:"La Héxada: número de la perfección. El hexágono es la figura de la colmena, de los cristales, de la eficiencia natural.",energia:"Hoy el campo tiene una cualidad envolvente, nutricia. Es un día especialmente apto para sanar relaciones y crear belleza en el entorno.",cuerpo:"Corazón y sistema circulatorio. Las prácticas de amor propio resuenan profundamente hoy.",consejo:"Mirá qué relación necesita atención. No para resolver todo, sino para hacer un gesto genuino de cuidado.",sombra:"El martirio, el cuidado que se convierte en control, la necesidad de ser necesitado.",afirmacion:"Hoy cuido con presencia. Mi amor es práctica, no promesa."}},
+  7:{nombre:"El Buscador",kw:"Profundidad · Silencio · Misterio",desc:"Energía de introspección y análisis. Día para el retiro, la contemplación, la investigación profunda.",profundo:{esencia:"La Héptada: número sagrado en casi todas las tradiciones. Siete planetas clásicos, siete notas de la escala, siete colores del arcoíris.",energia:"Hoy el campo invita hacia adentro. La superficie del mundo se vuelve menos interesante que su profundidad.",cuerpo:"Sistema endócrino, glándula pineal. El ayuno, el silencio, la meditación larga amplifican la cualidad del 7.",consejo:"Buscá momentos de soledad verdadera hoy. El 7 regala visión.",sombra:"El aislamiento que se vuelve escape, el análisis que nunca llega a la acción.",afirmacion:"Hoy el silencio es mi maestro. En la profundidad encuentro lo que la superficie esconde."}},
+  8:{nombre:"El Manifestador",kw:"Poder · Materia · Manifestación",desc:"Energía de poder y manifestación material. Día para negociar, emprender con fuerza y reclamar lo que se merece.",profundo:{esencia:"La Ogdóada: el 8 es el número del infinito en posición vertical. Corresponde al poder mundano y espiritual integrado, al karma que se vuelve consciente.",energia:"Hoy el campo tiene una densidad particular. Las acciones tienen consecuencias inmediatas y visibles.",cuerpo:"Suprarrenales, sistema nervioso autónomo. La fuerza física es alta hoy.",consejo:"No subestimes tu poder hoy. El 8 pide que actúes desde tu autoridad real.",sombra:"El abuso de poder, la obsesión con el éxito material, el miedo a perder lo acumulado.",afirmacion:"Hoy actúo desde mi autoridad real. Lo que construyo con consciencia permanece."}},
+  9:{nombre:"El Completador",kw:"Cierre · Entrega · Transformación",desc:"Energía de cierre y universalidad. Día para soltar, concluir ciclos y hacer actos de entrega amplia.",profundo:{esencia:"La Enéada: último de los números simples, el 9 contiene a todos los anteriores. Es el número de la completitud.",energia:"Hoy el campo tiene una cualidad de final y, simultáneamente, de umbral. Hay una llamada a soltar.",cuerpo:"Sistema linfático e inmunológico. Las prácticas de limpieza resuenan con la energía del 9.",consejo:"Identificá una sola cosa que ya no te sirve y hacé un gesto de entrega.",sombra:"El apego disfrazado de servicio, la incapacidad de recibir.",afirmacion:"Hoy suelto lo que ya no me pertenece. Cada final es la forma que toma el comienzo."}},
+  11:{nombre:"El Iluminador",kw:"Intuición · Revelación · Maestría",desc:"Número maestro de intuición elevada. Día de alta sensibilidad espiritual y claridad visionaria.",profundo:{esencia:"El primer número maestro. El 11 es el canal entre el mundo ordinario y el conocimiento superior.",energia:"Hoy la sensibilidad está amplificada. Las intuiciones son más frecuentes y más precisas.",cuerpo:"Sistema nervioso central. Prácticas de enraizamiento son esenciales hoy.",consejo:"Prestá atención a lo que aparece tres veces hoy. El 11 habla en patrones.",sombra:"La hipersensibilidad que paraliza, el escapismo espiritual.",afirmacion:"Hoy soy canal. Recibo con claridad y actúo con presencia."}},
+  22:{nombre:"El Maestro Constructor",kw:"Visión · Construcción · Legado",desc:"Número maestro de poder constructivo máximo.",profundo:{esencia:"El segundo número maestro. Combina la visión espiritual del 11 con la capacidad constructiva del 4.",energia:"La energía hoy es de una magnitud inusual. Los proyectos iniciados hoy tienen potencial de impacto largo.",cuerpo:"Toda la estructura física. El cuerpo como instrumento de manifestación.",consejo:"No desperdicies este día en lo urgente. Dedicale tiempo a lo que importa a largo plazo.",sombra:"La megalomanía, el perfeccionismo que impide empezar.",afirmacion:"Hoy construyo para el tiempo que viene. Mi visión es un acto de servicio."}},
+  33:{nombre:"El Maestro del Amor",kw:"Amor · Servicio · Compasión",desc:"Número maestro de amor crístico.",profundo:{esencia:"El tercer número maestro, el más raro. El amor que no excluye nada ni a nadie.",energia:"Hoy el campo vibra con una calidad de amor universal.",cuerpo:"Corazón expandido. Práctica de metta (amor bondadoso) amplificada.",consejo:"Un acto de amor completamente desinteresado hoy tiene un peso simbólico fuera de lo normal.",sombra:"El auto-sacrificio patológico, la confusión entre compasión y ausencia de límites.",afirmacion:"Hoy amo sin calcular. Mi servicio es mi camino."}}
+};
+
+const ARCANOS={
+  0:{nombre:"El Loco",romano:"O",desc:"Salto al vacío. Libertad absoluta, comienzos sin mapa.",profundo:{esencia:"El Loco es el único arcano sin número, el potencial puro antes de la forma.",lectura:"La presencia del Loco sugiere un campo de posibilidades sin cartografiar. Hoy puede aparecer la tentación de saltar sin calcular.",simbolismo:"La mochila pequeña (lo esencial), el precipicio (el umbral), el perro (el instinto), la flor blanca (la inocencia como recurso).",pregunta:"¿Qué estás a punto de comenzar sin saber exactamente a dónde lleva?",afirmacion:"Confío en el camino aunque no pueda verlo completo."}},
+  1:{nombre:"El Mago",romano:"I",desc:"Voluntad concentrada. El poder de manifestar usando todos los recursos disponibles.",profundo:{esencia:"El Mago tiene los cuatro palos del tarot sobre su mesa. Es el conocimiento que se convierte en poder.",lectura:"Un día del Mago pide que uses todos tus recursos con plena consciencia. Las herramientas ya están sobre la mesa.",simbolismo:"La mesa con los cuatro palos, la varita al cielo y el dedo a la tierra (como arriba, como abajo), el símbolo del infinito.",pregunta:"¿Qué recursos tenés disponibles hoy que no estás usando?",afirmacion:"Todo lo que necesito para crear ya está en mis manos."}},
+  2:{nombre:"La Sacerdotisa",romano:"II",desc:"Conocimiento velado. Lo que espera ser descubierto en el silencio.",profundo:{esencia:"La Sacerdotisa custodia el umbral entre lo visible y lo oculto. No enseña: guarda.",lectura:"Hay algo que ya sabés y que tu mente consciente se resiste a reconocer. Prestale atención a los sueños.",simbolismo:"El velo (lo que no puede verse directamente), la luna a sus pies (el inconsciente), las columnas B y J.",pregunta:"¿Qué sabés pero no querés saber?",afirmacion:"Mi intuición sabe lo que mi mente todavía no puede ver."}},
+  3:{nombre:"La Emperatriz",romano:"III",desc:"Fertilidad y abundancia. Creación que surge de la tierra.",profundo:{esencia:"La Emperatriz es la Gran Madre, el principio femenino en su aspecto más pleno y generoso.",lectura:"Un día de la Emperatriz pide que te conectes con tu capacidad generativa: crear, nutrir, gozar, encarnar.",simbolismo:"El campo de trigo (abundancia), el bosque (natura en plenitud), el escudo con Venus, la corona de estrellas.",pregunta:"¿En qué área de tu vida estás siendo demasiado restrictivo/a?",afirmacion:"Soy creativo/a y generoso/a. La abundancia fluye a través de mí."}},
+  4:{nombre:"El Emperador",romano:"IV",desc:"Estructura y autoridad. El orden que protege y organiza.",profundo:{esencia:"El Emperador es el principio organizador. Es Marte y Aries: la energía que traza límites y construye sistemas.",lectura:"Un día del Emperador pide que te hagas cargo de lo que está sin orden en tu vida.",simbolismo:"El trono de piedra (permanencia), el globo (dominio), el cetro ankh (autoridad vital), la armadura.",pregunta:"¿Dónde necesitás ejercer autoridad en tu propia vida?",afirmacion:"Ejerzo mi autoridad con claridad y responsabilidad."}},
+  5:{nombre:"El Hierofante",romano:"V",desc:"Tradición y enseñanza. El puente entre lo sagrado y lo cotidiano.",profundo:{esencia:"El Hierofante es el guardián de la tradición, el maestro que transmite lo que ha sido transmitido a él.",lectura:"Puede señalar tensión entre la norma establecida y el propio camino, o encuentros con maestros significativos.",simbolismo:"Las dos columnas, los dos monjes (quienes reciben), las llaves cruzadas, el triple cetro.",pregunta:"¿A qué tradición o linaje pertenecés? ¿Qué te fue transmitido que vale la pena honrar?",afirmacion:"Honro lo que recibí y transmito lo que aprendí."}},
+  6:{nombre:"Los Amantes",romano:"VI",desc:"Elección fundamental. El amor como decisión y camino de conocimiento.",profundo:{esencia:"Los Amantes no son solo una carta del amor romántico: son una carta de la elección fundamental.",lectura:"Un día de Los Amantes trae la necesidad de elegir: en el amor, en los valores, en la identidad.",simbolismo:"El ángel Raphael (el amor como acto sagrado), el árbol del conocimiento, el árbol de llamas, la montaña.",pregunta:"¿Hay una elección pendiente que estás evitando?",afirmacion:"Elijo con el corazón abierto y los ojos claros."}},
+  7:{nombre:"El Carro",romano:"VII",desc:"Voluntad en movimiento. Dominio sobre las fuerzas contrarias.",profundo:{esencia:"El Carro es la voluntad que ha aprendido a conducir las propias contradicciones.",lectura:"Un día del Carro pide claridad de dirección y control sobre los propios impulsos opuestos.",simbolismo:"Las armaduras estrelladas, el dosel de estrellas, el cetro sin empuñar, las esfinges opuestas.",pregunta:"¿Qué dos impulsos opuestos estás gestionando hoy?",afirmacion:"Soy quien conduce, no quien es conducido."}},
+  8:{nombre:"La Fuerza",romano:"VIII",desc:"Poder suave. Lo instintivo domeñado con amor.",profundo:{esencia:"La Fuerza muestra a una figura femenina cerrando suavemente las fauces de un león. No hay armas.",lectura:"Un día de La Fuerza invita a enfrentar lo que asusta no con agresión sino con presencia amorosa.",simbolismo:"La corona de flores, el manto blanco, el león (las pasiones), el gesto suave.",pregunta:"¿Qué aspecto de ti mismo evitás en lugar de integrar con amor?",afirmacion:"Mi mayor fuerza es la ternura con la que me enfrento a mí mismo/a."}},
+  9:{nombre:"El Ermitaño",romano:"IX",desc:"Retiro y guía interior. La búsqueda solitaria como iluminación.",profundo:{esencia:"El Ermitaño ha dejado atrás el mundo activo para emprender la búsqueda interior.",lectura:"Un día del Ermitaño pide soledad, reflexión, retiro de la actividad social.",simbolismo:"La linterna (la luz que uno porta), la estrella de seis puntas, el bastón, la cumbre nevada.",pregunta:"¿Cuándo fue la última vez que estuviste verdaderamente solo/a con tu propio pensamiento?",afirmacion:"En el silencio de mi propio camino encuentro la guía que necesito."}},
+  10:{nombre:"La Rueda",romano:"X",desc:"Ciclos y fortuna. Lo que sube baja, lo que baja sube.",profundo:{esencia:"La Rueda es el cosmos en movimiento, la ley de los ciclos que no necesita de nuestra comprensión.",lectura:"Un día de la Rueda señala un momento de inflexión en algún ciclo de tu vida.",simbolismo:"Las cuatro figuras estables, la serpiente bajando, Anubis subiendo, la esfinge en la cima.",pregunta:"¿En qué ciclo de tu vida reconocés un giro?",afirmacion:"Confío en el ciclo. Todo lo que baja volverá a subir."}},
+  11:{nombre:"La Justicia",romano:"XI",desc:"Equilibrio y consecuencia. La verdad que no cede.",profundo:{esencia:"La Justicia del Tarot es la ley del cosmos, la exactitud de la consecuencia.",lectura:"Hay una cuenta que se equilibra hoy, una consecuencia que llega, un ajuste que no puede evitarse.",simbolismo:"La espada recta (la verdad), la balanza, la corona, el velo entre columnas.",pregunta:"¿Hay algo en tu vida que sabés que está desequilibrado y que estás postergando equilibrar?",afirmacion:"Actúo con integridad y confío en que el orden se restaura."}},
+  12:{nombre:"El Colgado",romano:"XII",desc:"Suspensión voluntaria. Ver el mundo invertido.",profundo:{esencia:"El Colgado está suspendido por su propio pie —no está atado con violencia— y su expresión es de serenidad.",lectura:"Un día del Colgado pide que sueltes el control, que dejes de luchar contra lo que no puede resolverse con más acción.",simbolismo:"El árbol vivo (el sacrificio que sostiene), la aureola (iluminación), la postura serena, el pie libre.",pregunta:"¿Qué situación mejoraría si dejaras de intentar controlarla?",afirmacion:"Suelto el control y confío en lo que aparece cuando dejo de luchar."}},
+  13:{nombre:"La Muerte",romano:"XIII",desc:"Transformación radical. El fin que es comienzo, el umbral.",profundo:{esencia:"La Muerte del Tarot raramente presagia muerte física: es el arcano de la transformación necesaria.",lectura:"Un día de La Muerte señala el final de una fase, de una identidad, de una forma de ser.",simbolismo:"El caballo blanco, las figuras inclinadas, la bandera con la rosa blanca, el sol naciente.",pregunta:"¿Qué parte de vos que ya murió estás intentando mantener viva?",afirmacion:"Permito que lo que debe terminar termine. Soy el umbral."}},
+  14:{nombre:"La Templanza",romano:"XIV",desc:"Alquimia y medida. La paciencia como instrumento de transformación.",profundo:{esencia:"La Templanza es la carta del alquimista: el ángel que vierte líquido entre dos copas sin derramar ni una gota.",lectura:"No es un día de extremos ni de gestos grandiosos. Es un día de proceso paciente y ajuste fino.",simbolismo:"Las dos copas, el camino hacia la corona, el triángulo en el pecho, un pie en agua y otro en tierra.",pregunta:"¿En qué área de tu vida estás siendo demasiado impaciente?",afirmacion:"Confío en el proceso lento. La transformación verdadera no se apresura."}},
+  15:{nombre:"El Diablo",romano:"XV",desc:"Sombra y atadura. Mirar de frente lo que encadena.",profundo:{esencia:"El Diablo del Tarot no es el mal: es la sombra proyectada de lo que la consciencia no quiere ver.",lectura:"Un día del Diablo invita a mirar sin miedo a las propias ataduras. Las cadenas son flojas —podrían quitarse.",simbolismo:"Las cadenas flojas, el Baphomet, las llamas en las colas, los cuernos (lo instintivo negado).",pregunta:"¿Qué cadena cargás hoy? ¿Cuánto tiempo llevas pensando que no podés quitártela?",afirmacion:"Miro mi sombra sin miedo. Al verla, le quito su poder."}},
+  16:{nombre:"La Torre",romano:"XVI",desc:"Ruptura súbita. La destrucción como liberación necesaria.",profundo:{esencia:"La Torre destruye lo que se construyó sobre cimientos falsos para que algo verdadero pueda edificarse.",lectura:"Puede traer revelaciones abruptas o rupturas inesperadas. No gastes energía en sostener lo que el rayo alcanzó.",simbolismo:"La corona derribada (el ego destronado), las figuras que caen, el rayo, la torre en llamas.",pregunta:"¿Hay alguna estructura que sabés que es falsa pero que seguís sosteniendo?",afirmacion:"Lo que cae era falso. Lo que queda en pie es verdadero."}},
+  17:{nombre:"La Estrella",romano:"XVII",desc:"Esperanza desnuda. La fe que no necesita prueba.",profundo:{esencia:"La Estrella sigue a La Torre: la figura desnuda que vierte agua sobre la tierra después de la tormenta.",lectura:"Un día de La Estrella trae una cualidad de alivio, de renovación, de fe restaurada.",simbolismo:"La figura desnuda (vulnerabilidad como fortaleza), las dos vasijas, el ibis en el árbol, las estrellas menores.",pregunta:"¿Qué esperanza habías abandonado y que es momento de recuperar?",afirmacion:"Confío en el camino del alma incluso cuando no puedo verlo."}},
+  18:{nombre:"La Luna",romano:"XVIII",desc:"Ilusión y psique profunda. El miedo como iniciación.",profundo:{esencia:"La Luna ilumina sin claridad: su luz es indirecta, ambigua, proclive a las sombras.",lectura:"Puede traer confusión, ilusiones, miedos que emergen sin causa aparente. La psique está especialmente activa.",simbolismo:"Las dos torres (umbral), el camino en la oscuridad, el perro y el lobo, el cangrejo que emerge.",pregunta:"¿Qué miedo tuyo está operando hoy sin una causa racional clara?",afirmacion:"Camino en la oscuridad con respeto. Lo que no veo también me guía."}},
+  19:{nombre:"El Sol",romano:"XIX",desc:"Claridad y vitalidad. La conciencia plena, la luz que revela.",profundo:{esencia:"El Sol es el arcano de la consciencia plena, de la alegría sin sombra, del yo que se conoce sin engaños.",lectura:"Un día del Sol tiene una cualidad de luminosidad directa. La energía es alta, la visibilidad máxima.",simbolismo:"El niño desnudo (inocencia consciente), el caballo blanco, los girasoles, el sol con cara, las banderas rojas.",pregunta:"¿En qué área de tu vida podrías brillar más si te permitieras ser visto/a?",afirmacion:"Permito que mi luz brille sin disculpas ni atenuantes."}},
+  20:{nombre:"El Juicio",romano:"XX",desc:"Llamado y resurrección. El momento de responder al propio destino.",profundo:{esencia:"El Juicio muestra la resurrección: figuras que responden al llamado del ángel.",lectura:"Puede traer un llamado claro, una señal que ha estado esperando respuesta.",simbolismo:"El ángel (el llamado), las figuras resucitadas, las montañas de hielo, la bandera roja y blanca.",pregunta:"¿Hay un llamado en tu vida al que todavía no respondiste?",afirmacion:"Escucho mi llamado. Respondo con todo lo que soy."}},
+  21:{nombre:"El Mundo",romano:"XXI",desc:"Completitud. El ciclo cerrado con maestría.",profundo:{esencia:"El Mundo es el último arcano del ciclo mayor. La figura danzante muestra el alma que ha completado el viaje.",lectura:"Un día del Mundo tiene una cualidad de completitud, de integración, de haber llegado.",simbolismo:"La corona de laureles, la figura danzante, los cuatro seres, las varas sostenidas con maestría.",pregunta:"¿Qué ciclo de tu vida está llegando a su completitud?",afirmacion:"Soy el viaje y el destino. El ciclo se cierra en plenitud."}}
+};
+
+const SELLOS=[
+  {n:"Dragón Rojo",d:"Nacimiento, fuente primordial.",profundo:"El Dragón Rojo (Imix) es el primer sello del Tzolkin, el útero del cosmos, la memoria celular del origen. Estar bajo su influencia es estar en contacto con la fuente, con el principio que precede a todo pensamiento. Es también el sello de la nutrición y del cuidado que surge del instinto, no del cálculo."},
+  {n:"Viento Blanco",d:"Espíritu, comunicación, aliento.",profundo:"El Viento Blanco (Ik) es el aliento del espíritu que mueve todas las cosas. La comunicación bajo este sello no es la del lenguaje ordinario: es la del mensaje que llega de forma inesperada, a través de sueños, encuentros, coincidencias. Hoy las palabras tienen un peso particular."},
+  {n:"Noche Azul",d:"Sueño, profundidad inconsciente.",profundo:"La Noche Azul (Akbal) rige la casa del sueño y del inconsciente activo. Es la oscuridad fértil donde germina lo que aún no tiene forma. Los días bajo este sello favorecen la intuición, la conexión con el mundo interior y el trabajo con sueños y símbolos."},
+  {n:"Semilla Amarilla",d:"Florecimiento, objetivos vitales.",profundo:"La Semilla Amarilla (Kan) contiene el código completo de lo que será. Es el objetivo de vida codificado en el ADN del alma. Bajo este sello hay una llamada a identificar el propio potencial y a remover los obstáculos que impiden su florecimiento."},
+  {n:"Serpiente Roja",d:"Fuerza vital, instinto, sangre.",profundo:"La Serpiente Roja (Chicchan) es la kundalini maya, la fuerza vital que duerme en la base de la columna. Bajo este sello la energía física está amplificada, los instintos son más precisos, el cuerpo sabe cosas que la mente todavía no."},
+  {n:"Puente de Mundo",d:"Transición, igualdad, oportunidad.",profundo:"El Puente de Mundo (Cimi) es el sello de la transición, del momento entre dos estados. La muerte no como fin sino como umbral. Bajo su influencia, lo que termina es necesario para lo que viene."},
+  {n:"Mano Azul",d:"Logro, sanación, cierre de ciclos.",profundo:"La Mano Azul (Manik) es el sello del chamán que sana y del artesano que construye. Hoy es un día especialmente potente para sanar, para completar proyectos, para hacer el gesto final de algo que lleva tiempo pendiente."},
+  {n:"Estrella Amarilla",d:"Elegancia, arte, harmonía.",profundo:"La Estrella Amarilla (Lamat) es el sello de Venus y de la belleza como camino espiritual. Bajo su influencia, la creación artística tiene una potencia particular y la belleza se vuelve portal."},
+  {n:"Luna Roja",d:"Purificación, flujo universal.",profundo:"La Luna Roja (Muluc) es el sello del agua que purifica y fluye. Los rituales de agua tienen especial potencia bajo este sello. Fluir no es debilidad: es inteligencia."},
+  {n:"Perro Blanco",d:"Amor, lealtad, corazón fiel.",profundo:"El Perro Blanco (Oc) es el guardián del amor leal. Bajo su influencia, las relaciones genuinas se fortalecen y las superficiales se vuelven incómodas. Es un día para honrar los vínculos reales."},
+  {n:"Mono Azul",d:"Juego, magia, artesano del tiempo.",profundo:"El Mono Azul (Chuen) es el artesano divino, el creador del tiempo. Su magia es la del juego consciente. Bajo su influencia, no hay que tomarse demasiado en serio."},
+  {n:"Humano Amarillo",d:"Libre albedrío, gracia, cosecha.",profundo:"El Humano Amarillo (Eb) es el sello del libre albedrío pleno. Es también el sello de la cosecha, de lo que se recibe como resultado de las elecciones acumuladas."},
+  {n:"Caminante del Cielo",d:"Exploración, unión cielos-tierra.",profundo:"El Caminante del Cielo Rojo (Ben) es el puente vivo entre los mundos. Bajo su influencia, los viajes —físicos o interiores— tienen una dimensión iniciática."},
+  {n:"Mago Blanco",d:"Atemporalidad, receptor de magia.",profundo:"El Mago Blanco (Ix) vive fuera del tiempo lineal. Bajo su influencia, la sincronicidad es alta y los signos del entorno merecen especial atención."},
+  {n:"Águila Azul",d:"Visión creativa, alcanzar lo alto.",profundo:"El Águila Azul (Men) ve desde una altura que los otros no alcanzan. Bajo su influencia, es posible acceder a perspectivas más amplias y ver soluciones imposibles desde el nivel del suelo."},
+  {n:"Guerrero Amarillo",d:"Inteligencia cósmica, coraje.",profundo:"El Guerrero Amarillo (Cib) porta la inteligencia acumulada de los ancestros. El miedo puede convertirse en valentía si se lo mira de frente."},
+  {n:"Tierra Roja",d:"Sincronicidad, fuerza telúrica.",profundo:"La Tierra Roja (Caban) es la fuerza telúrica, el magnetismo de la tierra que orienta. Bajo su influencia, las sincronicidades se multiplican."},
+  {n:"Espejo Blanco",d:"Reflexión, orden atemporal.",profundo:"El Espejo Blanco (Etznab) es el orden que existe fuera del tiempo. Bajo su influencia, la claridad es alta y la ilusión se vuelve más difícil de sostener."},
+  {n:"Tormenta Azul",d:"Auto-generación, catálisis.",profundo:"La Tormenta Azul (Cauac) es el catalizador que rompe el equilibrio para crear uno nuevo. Los procesos de cambio detenidos pueden activarse abruptamente."},
+  {n:"Sol Amarillo",d:"Iluminación, amor universal.",profundo:"El Sol Amarillo (Ahau) es el último sello del Tzolkin. Bajo su influencia, la consciencia se expande naturalmente. Es un día de gratitud, presencia y amor incondicional."}
+];
+
+const TONOS_NAMES=["Unidad","Dualidad","Activación","Autodefinición","Radiancia","Rítmica","Resonancia","Integridad","Solar","Manifestación","Liberación","Cooperación","Trascendencia"];
+
+const PLANETAS=[
+  {n:"Sol",s:"☉",d:"Consciencia, vitalidad, expresión del yo central.",profundo:"En la tradición caldea, el Sol rige la consciencia de sí mismo. Los días del Sol favorecen la visibilidad, el liderazgo y la creatividad que nace del corazón."},
+  {n:"Luna",s:"☽",d:"Emoción, intuición, ciclos y memoria.",profundo:"La Luna rige el cuerpo astral, las emociones, los sueños. Los días de la Luna son fluidos, cambiantes, proclives a la intuición."},
+  {n:"Marte",s:"♂",d:"Acción, conflicto, energía física y deseo.",profundo:"Marte rige la voluntad activa. Los días de Marte son días de decisión y movimiento. El regalo es la capacidad de actuar sin vacilación."},
+  {n:"Mercurio",s:"☿",d:"Comunicación, movimiento, intercambio.",profundo:"Mercurio es el mensajero entre los mundos. Los días de Mercurio favorecen el pensamiento rápido, la comunicación y los acuerdos."},
+  {n:"Júpiter",s:"♃",d:"Expansión, fortuna, sabiduría y generosidad.",profundo:"Júpiter es el principio de la expansión benevolente. Los días de Júpiter son días de oportunidad y generosidad posible."},
+  {n:"Venus",s:"♀",d:"Amor, belleza, artes, placer y armonía.",profundo:"Venus es el principio de la atracción. Los días de Venus favorecen las relaciones, la creación artística y el placer."},
+  {n:"Saturno",s:"♄",d:"Karma, límite, trabajo profundo y disciplina.",profundo:"Saturno es el gran maestro del karma. Sus días traen la consciencia de los límites reales y la disciplina como práctica espiritual."}
+];
+
+const ORDEN_CALDEO=[0,5,3,1,6,4,2];
+
+const ZODIACO=[
+  {n:"Aries",s:"♈",f:"21 mar–19 abr",e:"Fuego",r:"Marte",d:"Impulso pionero, coraje y arranque.",profundo:"Aries es el ariete que rompe la puerta de la primavera. Su energía es de inicio puro, de acción antes del pensamiento. La lección de Aries: canalizar esa energía sin quemarla toda en el primer impulso."},
+  {n:"Tauro",s:"♉",f:"20 abr–20 may",e:"Tierra",r:"Venus",d:"Construcción lenta y sólida.",profundo:"Tauro transforma el impulso de Aries en algo tangible y duradero. Su conexión con Venus lo hace especialmente sensible a la belleza y la abundancia. Su lección: aprender a soltar lo que ya no crece."},
+  {n:"Géminis",s:"♊",f:"21 may–20 jun",e:"Aire",r:"Mercurio",d:"Dualidad e intercambio.",profundo:"Géminis siempre ve dos lados y puede sostener puntos de vista opuestos simultáneamente. Su mente es veloz, conectora, curiosa. Su lección: profundizar cuando todo invita a seguir la siguiente idea."},
+  {n:"Cáncer",s:"♋",f:"21 jun–22 jul",e:"Agua",r:"Luna",d:"Protección y memoria.",profundo:"Cáncer es la madre del zodíaco, el guardián de la memoria y el hogar. Su inteligencia es emocional e intuitiva. Su lección: nutrir sin aferrarse."},
+  {n:"Leo",s:"♌",f:"23 jul–22 ago",e:"Fuego",r:"Sol",d:"Expresión y presencia.",profundo:"Leo nació para brillar y para hacer brillar a otros. Su generosidad es solar: da sin calcular. Su lección: distinguir el amor genuino de la necesidad de reconocimiento."},
+  {n:"Virgo",s:"♍",f:"23 ago–22 sep",e:"Tierra",r:"Mercurio",d:"Análisis y servicio.",profundo:"Virgo percibe el detalle que otros no ven y lo convierte en herramienta de servicio. Su lección: el servicio incluye servirse a sí mismo."},
+  {n:"Libra",s:"♎",f:"23 sep–22 oct",e:"Aire",r:"Venus",d:"Equilibrio y relación.",profundo:"Libra busca el punto de equilibrio entre los opuestos. Su sentido estético es finamente desarrollado. Su lección: tomar posición sin perder la armonía."},
+  {n:"Escorpio",s:"♏",f:"23 oct–21 nov",e:"Agua",r:"Plutón",d:"Profundidad y transformación.",profundo:"Escorpio es el alquimista que transforma el veneno en medicina. Su lección: no usar la penetración para controlar."},
+  {n:"Sagitario",s:"♐",f:"22 nov–21 dic",e:"Fuego",r:"Júpiter",d:"Expansión y búsqueda.",profundo:"Sagitario dispara su flecha hacia el horizonte más lejano. Busca el sentido, la verdad, la expansión. Su lección: el destino importa tanto como el viaje."},
+  {n:"Capricornio",s:"♑",f:"22 dic–19 ene",e:"Tierra",r:"Saturno",d:"Estructura y logro.",profundo:"Capricornio escala montañas que otros ni intentan. Su relación con el tiempo es única. Su lección: aprender a sentir, no solo a lograr."},
+  {n:"Acuario",s:"♒",f:"20 ene–18 feb",e:"Aire",r:"Urano",d:"Ruptura y colectivo.",profundo:"Acuario vive en el futuro y lo trae al presente. Piensa en términos de humanidad. Su lección: conectar emocionalmente con el individuo, no solo con la idea."},
+  {n:"Piscis",s:"♓",f:"19 feb–20 mar",e:"Agua",r:"Neptuno",d:"Disolución y compasión.",profundo:"Piscis recuerda que toda separación es ilusión. Su lección: mantener un centro mientras siente todo."}
+];
+
+const SIGNOS_LUNARES=["Aries","Tauro","Géminis","Cáncer","Leo","Virgo","Libra","Escorpio","Sagitario","Capricornio","Acuario","Piscis"];
+
+const FASES=[
+  {n:"Luna Nueva",s:"🌑",d:"Inicio de ciclo. Sembrar intención en la oscuridad.",profundo:"La Luna Nueva es el momento óptimo para sembrar intenciones. Los rituales de inicio —escribir intenciones, meditar, encender una vela— tienen especial potencia."},
+  {n:"Creciente",s:"🌒",d:"Primer impulso. Lo sembrado comienza a moverse.",profundo:"La Luna Creciente señala que lo sembrado en la Luna Nueva comenzó a moverse. Es el momento de actuar sobre las intenciones."},
+  {n:"Cuarto Creciente",s:"🌓",d:"Punto de decisión. Superar el primer obstáculo.",profundo:"El primer momento de tensión del ciclo. El proyecto encuentra su primera resistencia real. La clave es no abandonar."},
+  {n:"Gibosa Creciente",s:"🌔",d:"Esfuerzo sostenido. Refinamiento antes del pico.",profundo:"La fase del trabajo fino antes de la culminación. El momento del ajuste último que transforma lo bueno en excelente."},
+  {n:"Luna Llena",s:"🌕",d:"Máxima energía. Todo se ilumina.",profundo:"La Luna Llena es el punto de máxima amplificación. Las emociones están amplificadas, la energía es máxima. Es el momento de la cosecha y también de la revelación."},
+  {n:"Gibosa Menguante",s:"🌖",d:"Primer descenso. Compartir lo aprendido.",profundo:"El inicio del descenso después de la plenitud. Es el momento de compartir lo cosechado, de distribuir lo que llegó."},
+  {n:"Cuarto Menguante",s:"🌗",d:"Revisión. Soltar lo que no sirve.",profundo:"El segundo punto de tensión. ¿Qué funcionó? ¿Qué no? Es momento de hacer un balance honesto."},
+  {n:"Menguante",s:"🌘",d:"Reposo y entrega. Preparar el terreno.",profundo:"La fase del reposo fértil. Los rituales de limpieza y gratitud son especialmente potentes ahora."}
+];
+
+const COLORES={1:{hex:"#8b1c1c",n:"Rojo",ch:"Raíz",a:"Voluntad, acción, vitalidad"},2:{hex:"#b54f0a",n:"Naranja",ch:"Sacro",a:"Emoción, creatividad, flujo"},3:{hex:"#9e860e",n:"Amarillo",ch:"Plexo solar",a:"Alegría, expansión, intelecto"},4:{hex:"#17612f",n:"Verde",ch:"Corazón",a:"Estabilidad, crecimiento, equilibrio"},5:{hex:"#1a4880",n:"Azul",ch:"Garganta",a:"Comunicación, cambio, libertad"},6:{hex:"#501a70",n:"Violeta",ch:"Tercer ojo",a:"Visión, amor superior, belleza"},7:{hex:"#320c60",n:"Índigo",ch:"Corona",a:"Misterio, sabiduría, conexión"},8:{hex:"#8a5a0e",n:"Dorado",ch:"Integrador",a:"Poder, abundancia, manifestación"},9:{hex:"#1a7860",n:"Turquesa",ch:"Transpersonal",a:"Completitud, universalidad"},11:{hex:"#606060",n:"Plateado",ch:"Lunar",a:"Intuición, canal, mensaje"},22:{hex:"#9a720e",n:"Oro antiguo",ch:"Maestro",a:"Manifestación suprema, legado"},33:{hex:"#b8a878",n:"Oro blanco",ch:"Divino",a:"Amor crístico, servicio total"}};
+
+const ANIOS_P={1:{n:"Año 1 — El Comienzo",d:"Ciclo nuevo. Momento de sembrar intención, iniciar, establecer identidad en nuevo terreno.",profundo:"El Año 1 marca el inicio de un ciclo de 9 años. Todo lo que se comience aquí tiene la potencia de ese comienzo. La identidad se redefine. La sabiduría: elegir con cuidado qué semilla merece ese suelo fértil."},2:{n:"Año 2 — La Espera",d:"Año de gestación y diplomacia. No es tiempo de empujar sino de construir alianzas.",profundo:"El Año 2 es el año del crecimiento invisible. Lo sembrado en el 1 está germinando bajo tierra. Forzar la aparición prematura es el error más común. Las alianzas que se forman en un año 2 suelen ser de las más durables."},3:{n:"Año 3 — La Expansión",d:"Año de creatividad y sociabilidad. Lo plantado comienza a manifestarse.",profundo:"El Año 3 es cuando lo sembrado se hace visible. Expansión creativa, comunicación, conexiones. El peligro es la dispersión. La recomendación: elegir las dos o tres expresiones más importantes y darles toda la energía."},4:{n:"Año 4 — El Trabajo",d:"Año de estructura y esfuerzo.",profundo:"El Año 4 es el año de poner los fundamentos. Puede sentirse pesado pero es absolutamente necesario. Lo que se construya con rigor aquí sostendrá los logros de los años que vienen."},5:{n:"Año 5 — El Cambio",d:"Año de movimiento y transformación.",profundo:"El Año 5 trae transformaciones inesperadas. Los cambios que llegan suelen ser abruptos y necesarios. El secreto: mantener un centro sólido mientras todo a alrededor se mueve."},6:{n:"Año 6 — La Responsabilidad",d:"Año de cuidado y ajuste.",profundo:"El Año 6 llama a hacerse cargo: del hogar, de los vínculos, del propio cuerpo. La pregunta clave: ¿qué y a quién elegís cuidar conscientemente?"},7:{n:"Año 7 — El Retiro Interior",d:"Año de introspección y análisis.",profundo:"El Año 7 es el año del viaje interior. No es un año de grandes logros externos sino de profundización radical. Las respuestas no están afuera."},8:{n:"Año 8 — La Cosecha",d:"Año de poder y manifestación material.",profundo:"El Año 8 amplifica todo —lo bien trabajado y lo descuidado. Es el año de máxima autoridad personal. Usarla con consciencia es la práctica."},9:{n:"Año 9 — El Cierre",d:"Año de conclusión.",profundo:"El Año 9 cierra el ciclo. Es un año de soltar todo lo que ya no va a continuar. La sabiduría: honrar lo que fue y soltarlo con gratitud, para que el nuevo ciclo pueda comenzar en suelo limpio."}};
+
+const TABLA_PIT={A:1,B:2,C:3,D:4,E:5,F:6,G:7,H:8,I:9,J:1,K:2,L:3,M:4,N:5,O:6,P:7,Q:8,R:9,S:1,T:2,U:3,V:4,W:5,X:6,Y:7,Z:8,Á:1,É:5,Í:9,Ó:6,Ú:3,Ü:3,Ñ:5};
+const VOCALES=new Set(['A','E','I','O','U','Á','É','Í','Ó','Ú']);
+
+// ════════════════════════════════════════════════════
+// SÍNTESIS PREGENERADA
+// ════════════════════════════════════════════════════
+
+function generarSintesis(numD, arcano, luna, planeta, signo, kin){
+  const n=numD;
+  const combos={
+    // num + planeta
+    "1_Sol":"El Iniciador y el Sol convergen hoy: es un día de máxima afirmación del yo. Empezá algo que lleve tu firma.",
+    "1_Marte":"El 1 y Marte se amplifican mutuamente. Energía de arranque puro, de decisión sin demora. Cuidado con la impulsividad.",
+    "7_Luna":"El 7 y la Luna crean hoy un espacio de profunda introspección. El mundo exterior puede esperar. Tu mundo interior, no.",
+    "7_Saturno":"El 7 pitagórico y Saturno hablan el mismo idioma: rigor, silencio, profundidad. Un día para el trabajo serio del alma.",
+    "9_Luna":"El 9 y la Luna menguante convergen en una misma dirección: soltar. No es día de avanzar, es día de revisar lo que ya no sirve.",
+    "3_Venus":"El 3 y Venus crean hoy un campo extraordinario para la creación artística. Cualquier expresión que hagas hoy tiene más resonancia de lo habitual.",
+    "8_Sol":"El 8 y el Sol: un día de poder visible. Lo que hagas hoy con autoridad dejará huella.",
+    "4_Saturno":"El 4 y Saturno: el más disciplinado de los días posibles. Sin atajos ni magia. Solo trabajo real.",
+    "5_Mercurio":"El 5 y Mercurio crean el día más inquieto del ciclo. Las ideas vuelan, los planes cambian. Tomá nota de todo pero comprometete con poco.",
+    "6_Venus":"El 6 y Venus: un día de amor activo. El cuidado como práctica espiritual. Hacé un gesto genuino hacia alguien que lo necesita.",
+    "2_Luna":"El 2 y la Luna: máxima receptividad. Escuchá más de lo que hablás. Recibirás algo importante si no lo tapás con ruido.",
+    "11_Luna":"El número maestro 11 y la Luna se potencian: el canal está abierto. Lo que llegue como intuición hoy merece ser registrado.",
+    "22_Sol":"El número maestro 22 y el Sol: un día excepcional para proyectar a gran escala. Usalo bien.",
+  };
+
+  // Buscar combinación específica
+  const key=`${n}_${planeta.n}`;
+  if(combos[key]) return combos[key];
+
+  // Síntesis dinámica por capas
+  const sintNum={
+    1:"La energía del día pide arranque, decisión y afirmación del yo.",
+    2:"El campo de hoy invita a la espera activa, la receptividad y el fortalecimiento de vínculos.",
+    3:"Hoy la energía quiere expresarse: crear, comunicar, conectar.",
+    4:"Un día de construcción real. Sin atajos. Lo que se haga hoy con rigor, dura.",
+    5:"El campo está inquieto y en movimiento. La adaptabilidad es la clave.",
+    6:"La energía de hoy pide cuidado, responsabilidad y presencia en los vínculos.",
+    7:"Un día de profundidad interior. El silencio es más productivo que la acción.",
+    8:"La energía de manifestación está alta. Es un día de poder consciente.",
+    9:"El campo invita al cierre, la entrega y la completitud. Soltá lo que ya cumplió su función.",
+    11:"Alta sensibilidad y canal abierto. Prestá atención a lo que aparece más de una vez.",
+    22:"Energía maestra disponible. Proyectá con visión de largo plazo.",
+    33:"Amor universal en el campo. Un acto de servicio genuino tiene resonancia especial hoy."
+  };
+
+  const sintArcano=arcano.nombre==="El Ermitaño"?"El Ermitaño refuerza ese llamado al interior: las respuestas están adentro.":
+    arcano.nombre==="El Sol"?"El Sol ilumina todo con claridad: un día de visibilidad y presencia.":
+    arcano.nombre==="La Luna"?"La Luna agrega ambigüedad e intuición: confiar en lo que se siente más que en lo que se ve.":
+    arcano.nombre==="La Torre"?"La Torre en el horizonte: algo está listo para derrumbarse y dar paso a algo verdadero.":
+    arcano.nombre==="La Estrella"?"La Estrella en el campo: fe restaurada, esperanza sin artificios.":
+    arcano.nombre==="La Muerte"?"La Muerte como arcano del día señala un umbral: algo termina para que algo nuevo pueda entrar.":
+    `El arcano de hoy es ${arcano.nombre}: ${arcano.desc.toLowerCase()}`;
+
+  const sintLuna=luna.n==="Luna Llena"?"La luna llena amplifica todo —emociones, energías, decisiones. Actuá con consciencia.":
+    luna.n==="Luna Nueva"?"La luna nueva agrega potencial de siembra: lo que se inicia hoy tiene el ciclo completo por delante.":
+    luna.n.includes("Menguante")?"La luna menguante refuerza la energía de cierre y entrega.":
+    "La fase lunar actual modula el campo con su propio ritmo.";
+
+  return`${sintNum[n]||"La energía del día tiene su propia dirección."} ${sintArcano} ${sintLuna}`;
+}
+
+// ════════════════════════════════════════════════════
+// CÁLCULOS
+// ════════════════════════════════════════════════════
+
+function red(n,m=true){if(m&&(n===11||n===22||n===33))return n;if(n<10)return n;return red(String(n).split('').reduce((a,b)=>a+parseInt(b),0),m)}
+function numFecha(f){return red(f.getDate()+(f.getMonth()+1)+f.getFullYear())}
+function kinMaya(f){
+  const ref=new Date(1987,6,26);const diff=Math.floor((f-ref)/86400000);const kin=((diff%260)+260)%260;
+  return{kin:kin+1,sello:SELLOS[kin%20],tono:{n:TONOS_NAMES[kin%13],num:(kin%13)+1}};
+}
+function arcanoDelNum(n){let x=n;while(x>21)x=red(x,false);return ARCANOS[x]||ARCANOS[0]}
+function faselunar(f){
+  const ref=new Date(2000,0,6);const dias=Math.floor((f-ref)/86400000);const fase=((dias%30)+30)%30;
+  if(fase<1.85)return{...FASES[0],dias:Math.ceil(7.38-fase)};if(fase<7.38)return{...FASES[1],dias:Math.ceil(9.22-fase)};
+  if(fase<9.22)return{...FASES[2],dias:Math.ceil(14.77-fase)};if(fase<14.77)return{...FASES[3],dias:Math.ceil(16.61-fase)};
+  if(fase<16.61)return{...FASES[4],dias:Math.ceil(22.15-fase)};if(fase<22.15)return{...FASES[5],dias:Math.ceil(23.99-fase)};
+  if(fase<23.99)return{...FASES[6],dias:Math.ceil(29.5-fase)};return{...FASES[7],dias:Math.ceil(30-fase+1)};
+}
+function signoSolar(mes,dia){
+  if((mes===3&&dia>=21)||(mes===4&&dia<=19))return ZODIACO[0];if((mes===4&&dia>=20)||(mes===5&&dia<=20))return ZODIACO[1];
+  if((mes===5&&dia>=21)||(mes===6&&dia<=20))return ZODIACO[2];if((mes===6&&dia>=21)||(mes===7&&dia<=22))return ZODIACO[3];
+  if((mes===7&&dia>=23)||(mes===8&&dia<=22))return ZODIACO[4];if((mes===8&&dia>=23)||(mes===9&&dia<=22))return ZODIACO[5];
+  if((mes===9&&dia>=23)||(mes===10&&dia<=22))return ZODIACO[6];if((mes===10&&dia>=23)||(mes===11&&dia<=21))return ZODIACO[7];
+  if((mes===11&&dia>=22)||(mes===12&&dia<=21))return ZODIACO[8];if((mes===12&&dia>=22)||(mes===1&&dia<=19))return ZODIACO[9];
+  if((mes===1&&dia>=20)||(mes===2&&dia<=18))return ZODIACO[10];return ZODIACO[11];
+}
+function signoLunar(f){
+  // Signo lunar: la luna recorre el zodíaco en ~27.3 días (2.27 días por signo)
+  const ref=new Date(2000,0,6); // luna nueva en Capricornio
+  const diff=Math.floor((f-ref)/86400000);
+  const idx=Math.floor(((diff*12/27.3)%12+12))%12;
+  return SIGNOS_LUNARES[idx];
+}
+function horaPlanetaria(f){
+  const mapaDia=[0,1,2,3,4,5,6];const idxDia=mapaDia[f.getDay()];
+  const posInicio=ORDEN_CALDEO.indexOf(idxDia);const h=f.getHours();
+  const planetaIdx=ORDEN_CALDEO[(posInicio+h)%7];
+  return{planeta:PLANETAS[planetaIdx],hora:h,minRestantes:59-f.getMinutes()};
+}
+function calcNombrePit(nombre){
+  const s=nombre.toUpperCase().replace(/[^A-ZÁÉÍÓÚÜÑ]/g,'');
+  let exp=0,alma=0,per=0;const detalle=[];
+  for(const c of s){const v=TABLA_PIT[c]||0;exp+=v;if(VOCALES.has(c)){alma+=v;detalle.push({c,v,tipo:'v'});}else{per+=v;detalle.push({c,v,tipo:'c'});}}
+  return{expresion:red(exp),alma:red(alma),personalidad:red(per),detalle,sumaExp:exp,sumaAlma:alma,sumaPer:per};
+}
+function diaPotencia(dia,mes,anio){
+  // Día del mes donde energía personal está en pico (año personal + número del día más alto)
+  const hoy=new Date();const anioActual=hoy.getFullYear();const mesActual=hoy.getMonth()+1;
+  const ap=red(dia+mes+anioActual,false);
+  let mejorDia=1,mejorScore=0;
+  const diasEnMes=new Date(anioActual,mesActual,0).getDate();
+  for(let d=1;d<=diasEnMes;d++){
+    const nDia=numFecha(new Date(anioActual,mesActual-1,d));
+    const score=red(ap+nDia,false);
+    if(score>mejorScore){mejorScore=score;mejorDia=d;}
+  }
+  return{dia:mejorDia,score:mejorScore};
+}
+
+// ════════════════════════════════════════════════════
+// GLIFO + MAPA
+// ════════════════════════════════════════════════════
+
+function generarGlifo(f){
+  const seed=f.getDate()*1000+(f.getMonth()+1)*100+(f.getFullYear()%100);
+  const cx=80,cy=80;let paths='';const pts=3+(seed%6);const points=[];
+  for(let i=0;i<pts;i++){const ang=(i/pts)*Math.PI*2-Math.PI/2;const ri=(seed%(i+3)%2===0)?60:27;points.push({x:cx+Math.cos(ang)*ri,y:cy+Math.sin(ang)*ri});}
+  for(let i=0;i<points.length;i++)for(let j=i+1;j<points.length;j++)paths+=`<line x1="${points[i].x.toFixed(1)}" y1="${points[i].y.toFixed(1)}" x2="${points[j].x.toFixed(1)}" y2="${points[j].y.toFixed(1)}" stroke="#c09840" stroke-width="0.6"/>`;
+  paths+=`<circle cx="${cx}" cy="${cy}" r="${(seed%8)+4}" fill="none" stroke="#c09840" stroke-width="0.6"/>`;
+  document.getElementById('glyphSvg').innerHTML=paths;
+}
+
+function renderMapa(numD,arcano,kin,luna,planeta,signo){
+  const svg=document.getElementById('mapSvg');const cx=280,cy=280;
+  const col=COLORES[numD]||COLORES[red(numD,false)]||COLORES[1];
+  let html=`<defs><radialGradient id="bg-g" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="${col.hex}" stop-opacity="0.1"/><stop offset="100%" stop-color="#07060400" stop-opacity="0"/></radialGradient></defs><rect width="560" height="560" fill="url(#bg-g)"/>`;
+  [240,180,120,70,30].forEach((r,i)=>{html+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#2e2918" stroke-width="${i===0?0.8:0.4}" stroke-dasharray="${i>0?'3 8':'none'}"/>`;});
+  html+=`<line x1="${cx}" y1="${cy-240}" x2="${cx}" y2="${cy+240}" stroke="#1e1b10" stroke-width="0.8"/><line x1="${cx-240}" y1="${cy}" x2="${cx+240}" y2="${cy}" stroke="#1e1b10" stroke-width="0.8"/>`;
+  const dg=170;html+=`<line x1="${cx-dg}" y1="${cy-dg}" x2="${cx+dg}" y2="${cy+dg}" stroke="#18160c" stroke-width="0.4"/><line x1="${cx+dg}" y1="${cy-dg}" x2="${cx-dg}" y2="${cy+dg}" stroke="#18160c" stroke-width="0.4"/>`;
+  const zonas=[{ang:-90,label:String(numD),sub:"número",dist:210},{ang:-45,label:arcano.nombre.split(' ').slice(-1)[0],sub:"tarot",dist:205},{ang:0,label:signo.s,sub:signo.n,dist:210},{ang:45,label:kin.sello.n.split(' ')[0],sub:"tzolkin",dist:205},{ang:90,label:luna.s,sub:luna.n.split(' ')[0],dist:210},{ang:135,label:planeta.s,sub:planeta.n,dist:205},{ang:180,label:(COLORES[numD]||COLORES[1]).n,sub:"color",dist:210},{ang:225,label:kin.tono.n,sub:"tono "+kin.tono.num,dist:205}];
+  const ptsStr=zonas.map(z=>{const r=z.ang*Math.PI/180;return`${(cx+Math.cos(r)*z.dist).toFixed(1)},${(cy+Math.sin(r)*z.dist).toFixed(1)}`;}).join(' ');
+  html+=`<polygon points="${ptsStr}" fill="${col.hex}" fill-opacity="0.04" stroke="${col.hex}" stroke-opacity="0.18" stroke-width="0.6"/>`;
+  zonas.forEach(z=>{const r=z.ang*Math.PI/180;const px=cx+Math.cos(r)*z.dist;const py=cy+Math.sin(r)*z.dist;const px2=cx+Math.cos(r)*80;const py2=cy+Math.sin(r)*80;html+=`<line x1="${px2.toFixed(1)}" y1="${py2.toFixed(1)}" x2="${(cx+Math.cos(r)*(z.dist-28)).toFixed(1)}" y2="${(cy+Math.sin(r)*(z.dist-28)).toFixed(1)}" stroke="#2a2418" stroke-width="0.4" stroke-dasharray="2 6"/>`;html+=`<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="3" fill="${col.hex}" opacity="0.5"/>`;const fs=z.label.length===1?24:z.label.length<5?12:9;html+=`<text x="${px.toFixed(1)}" y="${(py-12).toFixed(1)}" text-anchor="middle" font-family="IM Fell English,serif" font-size="${fs}" fill="#c09840" opacity="0.85">${z.label}</text>`;html+=`<text x="${px.toFixed(1)}" y="${(py+6).toFixed(1)}" text-anchor="middle" font-family="Courier Prime,monospace" font-size="7" fill="#574f36" letter-spacing="1.5">${z.sub.toUpperCase()}</text>`;});
+  html+=`<circle cx="${cx}" cy="${cy}" r="32" fill="${col.hex}" fill-opacity="0.12"/><circle cx="${cx}" cy="${cy}" r="32" fill="none" stroke="${col.hex}" stroke-opacity="0.35" stroke-width="1"/><text x="${cx}" y="${cy+8}" text-anchor="middle" font-family="IM Fell English,serif" font-size="24" fill="${col.hex}">${numD}</text>`;
+  svg.innerHTML=html;setTimeout(()=>document.getElementById('symbolicMap').classList.add('visible'),200);
+}
+
+// ════════════════════════════════════════════════════
+// DRAWER
+// ════════════════════════════════════════════════════
+
+function openDrawer(sys,title,body){
+  document.getElementById('drawerSystem').textContent=sys;
+  document.getElementById('drawerTitle').textContent=title;
+  document.getElementById('drawerBody').innerHTML=body;
+  document.getElementById('drawerOverlay').classList.add('open');
+  document.getElementById('drawer').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeDrawer(){
+  document.getElementById('drawerOverlay').classList.remove('open');
+  document.getElementById('drawer').classList.remove('open');
+  document.body.style.overflow='';
+}
+
+function dNum(n){const nd=NUM[n]||NUM[red(n,false)];if(!nd)return;const p=nd.profundo;openDrawer('Numerología Pitagórica',n+' · '+nd.nombre,`<div class="deep-section"><div class="deep-section-title">Esencia</div><div class="deep-text"><p>${p.esencia}</p></div></div><div class="deep-section"><div class="deep-section-title">Energía disponible hoy</div><div class="deep-text"><p>${p.energia}</p></div></div><div class="deep-section"><div class="deep-section-title">Cuerpo y práctica</div><div class="deep-text"><p>${p.cuerpo}</p></div></div><div class="deep-section"><div class="deep-section-title">Consejo del día</div><div class="deep-text"><p>${p.consejo}</p></div></div><div class="deep-section"><div class="deep-section-title">La sombra</div><div class="deep-text"><p>${p.sombra}</p></div></div><div class="deep-affirmation">${p.afirmacion}</div>`);}
+function dPlaneta(idx){const pl=PLANETAS[idx];openDrawer('Astrología Caldea',pl.s+' '+pl.n,`<div class="deep-section"><div class="deep-section-title">El planeta rector</div><div class="deep-text"><p>${pl.profundo}</p></div></div><div class="deep-affirmation">Hoy me muevo en la frecuencia de ${pl.n}.</div>`);}
+function dArcano(n){let x=n;while(x>21)x=red(x,false);const a=ARCANOS[x]||ARCANOS[0];const p=a.profundo;openDrawer('Tarot — Arcano Mayor',a.romano+' · '+a.nombre,`<div class="deep-section"><div class="deep-section-title">Esencia del arcano</div><div class="deep-text"><p>${p.esencia}</p></div></div><div class="deep-section"><div class="deep-section-title">Lectura del día</div><div class="deep-text"><p>${p.lectura}</p></div></div><div class="deep-section"><div class="deep-section-title">Simbolismo</div><div class="deep-text"><p>${p.simbolismo}</p></div></div><div class="deep-section"><div class="deep-section-title">Pregunta que porta el arcano</div><div class="deep-text"><p><strong>${p.pregunta}</strong></p></div></div><div class="deep-affirmation">${p.afirmacion}</div>`);}
+function dLuna(idx){const l=FASES[idx];openDrawer('Fase Lunar',l.s+' '+l.n,`<div class="deep-section"><div class="deep-section-title">Cualidad de esta fase</div><div class="deep-text"><p>${l.profundo}</p></div></div><div class="deep-affirmation">Estoy en sincronía con el ciclo lunar.</div>`);}
+function dKin(kinNum){const kin=kinMaya(new Date());openDrawer('Tzolkin Maya','Kin '+kin.kin+' · '+kin.sello.n,`<div class="deep-section"><div class="deep-section-title">El sello</div><div class="deep-text"><p>${kin.sello.profundo}</p></div></div><div class="deep-section"><div class="deep-section-title">El tono ${kin.tono.num}: ${kin.tono.n}</div><div class="deep-text"><p>El Tono ${kin.tono.num} modula la expresión del sello. Los 13 tonos representan los 13 pulsos de la creación.</p></div></div><div class="deep-affirmation">Hoy soy Kin ${kin.kin}: ${kin.sello.n} con Tono de ${kin.tono.n}.</div>`);}
+function dZodiaco(idx){const z=ZODIACO[idx];openDrawer('Zodiaco',z.s+' '+z.n,`<div class="deep-section"><div class="deep-section-title">El signo en profundidad</div><div class="deep-text"><p>${z.profundo}</p></div></div><div class="deep-grid"><div class="deep-grid-item"><div class="deep-grid-label">Elemento</div><div class="deep-grid-value">${z.e}</div></div><div class="deep-grid-item"><div class="deep-grid-label">Regente</div><div class="deep-grid-value">${z.r}</div></div></div><div class="deep-affirmation">La energía de ${z.n} está disponible hoy.</div>`);}
+function dAnio(ap,anioActual){const d=ANIOS_P[ap]||ANIOS_P[9];openDrawer('Año Personal '+anioActual,'Año '+ap,`<div class="deep-section"><div class="deep-section-title">Lectura del año ${ap}</div><div class="deep-text"><p>${d.profundo}</p></div></div><div class="deep-section"><div class="deep-section-title">Tu ciclo de 9 años</div><div class="deep-text"><p>Estás en el año <strong>${ap}</strong> de un ciclo de 9. Cada año tiene su función: el 1 siembra, el 2 germina, el 3 florece, el 4 consolida, el 5 transforma, el 6 integra, el 7 profundiza, el 8 cosecha y el 9 cierra.</p></div></div><div class="deep-affirmation">Estoy exactamente donde necesito estar en mi ciclo.</div>`);}
+function dCdv(cdv){const nd=NUM[cdv]||NUM[red(cdv,false)];if(!nd)return;const p=nd.profundo;openDrawer('Camino de Vida',cdv+' · '+nd.nombre,`<div class="deep-section"><div class="deep-section-title">Qué es el camino de vida</div><div class="deep-text"><p>El Número del Camino de Vida surge de la suma reducida de la fecha de nacimiento completa. No describe quién sos hoy sino el terreno en el que tu alma eligió crecer.</p></div></div><div class="deep-section"><div class="deep-section-title">Tu camino: el ${cdv}</div><div class="deep-text"><p>${p.esencia}</p><p>${p.consejo}</p></div></div><div class="deep-section"><div class="deep-section-title">La sombra</div><div class="deep-text"><p>${p.sombra}</p></div></div><div class="deep-affirmation">${p.afirmacion}</div>`);}
+function dNombreItem(num,tipo){
+  const nd=NUM[num]||NUM[red(num,false)];if(!nd)return;const p=nd.profundo;
+  const tipos={expresion:"El Número de Expresión surge de la suma de todas las letras. Expresa los talentos naturales y el propósito que el nombre porta.",alma:"El Número del Alma surge de las vocales. Expresa los deseos más profundos y las motivaciones que raramente se verbalizan.",personalidad:"El Número de Personalidad surge de las consonantes. Describe la primera impresión, la máscara positiva que uno proyecta."};
+  openDrawer('Nombre — '+tipo.charAt(0).toUpperCase()+tipo.slice(1),num+' · '+nd.nombre,`<div class="deep-section"><div class="deep-section-title">Qué mide este número</div><div class="deep-text"><p>${tipos[tipo]}</p></div></div><div class="deep-section"><div class="deep-section-title">El ${num} como energía del nombre</div><div class="deep-text"><p>${p.esencia}</p></div></div><div class="deep-section"><div class="deep-section-title">En la práctica</div><div class="deep-text"><p>${p.consejo}</p></div></div><div class="deep-affirmation">${p.afirmacion}</div>`);}
+
+// ════════════════════════════════════════════════════
+// RENDER DÍA
+// ════════════════════════════════════════════════════
+
+function card(delay,onclick,content,extra=''){
+  return`<div class="card fade-in ${extra}" style="animation-delay:${delay}s" onclick="${onclick}">${content}<div class="tap-hint">profundizar</div></div>`;
+}
+
+let _hoyData={};
+
+function renderDia(f){
+  const numD=numFecha(f);
+  const nd=NUM[numD]||NUM[red(numD,false)];
+  const col=COLORES[numD]||COLORES[red(numD,false)]||COLORES[1];
+  const arcano=arcanoDelNum(numD);
+  const kin=kinMaya(f);
+  const luna=faselunar(f);
+  const planIdx=[0,1,2,3,4,5,6][f.getDay()];
+  const planeta=PLANETAS[planIdx];
+  const signo=signoSolar(f.getMonth()+1,f.getDate());
+  const d=f.getDate(),m=f.getMonth()+1,a=f.getFullYear();
+  const hp=horaPlanetaria(f);
+  const sLunar=signoLunar(f);
+
+  _hoyData={numD,arcano,kin,luna,planeta,signo,col};
+
+  renderMapa(numD,arcano,kin,luna,planeta,signo);
+  document.getElementById('needle').style.setProperty('--needle-deg',(numD/9*360)+'deg');
+
+  // Síntesis
+  document.getElementById('sintesisText').textContent=generarSintesis(numD,arcano,luna,planeta,signo,kin);
+
+  // Ticker
+  document.getElementById('tickerPlaneta').textContent=hp.planeta.s+' '+hp.planeta.n;
+  document.getElementById('tickerLuna').textContent=luna.s+' en '+luna.dias+' días';
+  document.getElementById('tickerSignoLunar').textContent=sLunar;
+  document.getElementById('tickerCambio').textContent=hp.minRestantes+'min';
+
+  let html='';
+  html+=card(0,`dNum(${numD})`,`<div class="card-sys">Numerología Pitagórica</div><div class="card-num">${numD}</div><div class="card-title">${numD} · ${nd.nombre}</div><div class="card-kw">${nd.kw}</div><div class="card-desc">${nd.desc}</div><div class="card-calc">${d} + ${m} + ${a} = ${d+m+a} → ${numD}</div>`);
+  html+=card(0.08,`dPlaneta(${planIdx})`,`<div class="card-sys">Día Planetario</div><div class="planet-sym">${planeta.s}</div><div class="card-title">${planeta.n}</div><div class="card-desc">${planeta.d}</div>`);
+  html+=card(0.16,`dArcano(${numD})`,`<div class="card-sys">Tarot — Arcano Mayor</div><div class="tarot-wrap"><div class="tarot-mini"><span class="tarot-roman">${arcano.romano}</span></div><div><div class="card-title">${arcano.nombre}</div><div class="card-desc">${arcano.desc}</div></div></div>`);
+  const lunaIdx=FASES.indexOf(FASES.find(x=>x.n===luna.n));
+  html+=card(0.24,`dLuna(${lunaIdx<0?0:lunaIdx})`,`<div class="card-sys">Fase Lunar</div><div class="luna-sym">${luna.s}</div><div class="card-title">${luna.n}</div><div class="card-desc">${luna.d}</div>`);
+  html+=card(0.32,`dKin(${kin.kin})`,`<div class="card-sys">Tzolkin Maya</div><div class="card-title">Kin ${kin.kin}</div><div class="kin-row"><div class="kin-it"><div class="kin-lbl">Sello</div><div class="kin-val">${kin.sello.n}</div><div class="kin-sub">${kin.sello.d}</div></div><div class="kin-it"><div class="kin-lbl">Tono ${kin.tono.num}</div><div class="kin-val">${kin.tono.n}</div></div></div>`);
+  const signoIdx=ZODIACO.indexOf(signo);
+  html+=card(0.4,`dZodiaco(${signoIdx})`,`<div class="card-sys">Zodiaco Solar</div><div class="zodiac-sym">${signo.s}</div><div class="card-title">${signo.n}</div><div class="card-kw">${signo.e} · ${signo.r} · ${signo.f}</div><div class="card-desc">${signo.d}</div>`);
+  html+=`<div class="card fade-in" style="animation-delay:0.48s"><div class="card-sys">Color Vibracional</div><div class="card-title">Color del día</div><div class="swatch"><div class="swatch-box" style="background:${col.hex}"></div><div><div class="swatch-name">${col.n}</div><div class="swatch-sub">Chakra: ${col.ch}</div><div class="swatch-sub">${col.a}</div></div></div></div>`;
+  document.getElementById('cardsDia').innerHTML=html;
+}
+
+// ════════════════════════════════════════════════════
+// PERSONAL
+// ════════════════════════════════════════════════════
+
+function calcPersonal(){
+  const dia=parseInt(document.getElementById('nDia').value);
+  const mes=parseInt(document.getElementById('nMes').value);
+  const anio=parseInt(document.getElementById('nAnio').value);
+  if(!dia||!mes||!anio||anio<1900)return;
+  const hoy=new Date();const anioActual=hoy.getFullYear();const numD=numFecha(hoy);
+  const ap=red(dia+mes+anioActual,false);const apData=ANIOS_P[ap]||ANIOS_P[9];
+  const ndp=red(ap+numD,false);const ndpData=NUM[ndp]||NUM[red(ndp,false)];
+  const ndpCol=COLORES[ndp]||COLORES[red(ndp,false)]||COLORES[1];
+  const cdv=red(dia+mes+anio);const cdvData=NUM[cdv]||NUM[red(cdv,false)];
+  const signoNac=signoSolar(mes,dia);const kinNac=kinMaya(new Date(anio,mes-1,dia));
+  const potencia=diaPotencia(dia,mes,anio);
+
+  let html='';
+  html+=`<div class="card highlight-card fade-in" style="cursor:pointer" onclick="dAnio(${ap},${anioActual})"><div class="card-sys">Año Personal ${anioActual}</div><div class="year-big">${ap}</div><div class="card-title">${apData.n}</div><div class="card-desc">${apData.d}</div><div class="card-calc">${dia} + ${mes} + ${anioActual} = ${dia+mes+anioActual} → ${ap}</div><div class="tap-hint">profundizar</div></div>`;
+  html+=`<div class="card fade-in" style="background:#0a0905;border-color:var(--gold-d)"><div class="card-sys">Pico del mes</div><div class="card-title">Día ${potencia.dia}</div><div class="card-desc">Tu día de mayor energía personal este mes. La suma de tu año personal con la vibración de ese día alcanza el ${potencia.score}.</div></div>`;
+  html+=`<div class="oracle-grid-2">`;
+  html+=card(0.1,`dNum(${ndp})`,`<div class="card-sys">Tu Energía Hoy</div><div class="card-num">${ndp}</div><div class="card-title">${ndpData.nombre}</div><div class="card-kw">${ndpData.kw}</div><div class="card-desc">${ndpData.desc}</div><div class="card-calc">Año (${ap}) + Día (${numD}) → ${ndp}</div>`);
+  const signoNacIdx=ZODIACO.indexOf(signoNac);
+  html+=card(0.18,`dZodiaco(${signoNacIdx})`,`<div class="card-sys">Tu Signo Solar</div><div class="zodiac-sym">${signoNac.s}</div><div class="card-title">${signoNac.n}</div><div class="card-kw">${signoNac.e} · ${signoNac.r}</div><div class="card-desc">${signoNac.d}</div>`);
+  html+=card(0.26,`dCdv(${cdv})`,`<div class="card-sys">Camino de Vida</div><div class="card-num">${cdv}</div><div class="card-title">${cdv} · ${cdvData.nombre}</div><div class="card-kw">${cdvData.kw}</div><div class="card-desc">${cdvData.desc}</div><div class="card-calc">${dia} + ${mes} + ${anio} → ${cdv}</div>`);
+  html+=card(0.34,`dKin(${kinNac.kin})`,`<div class="card-sys">Tu Kin de Nacimiento</div><div class="card-title">Kin ${kinNac.kin}</div><div class="kin-row"><div class="kin-it"><div class="kin-lbl">Sello</div><div class="kin-val">${kinNac.sello.n}</div><div class="kin-sub">${kinNac.sello.d}</div></div><div class="kin-it"><div class="kin-lbl">Tono ${kinNac.tono.num}</div><div class="kin-val">${kinNac.tono.n}</div></div></div>`);
+  html+=`<div class="card fade-in" style="animation-delay:0.42s"><div class="card-sys">Tu Color Personal Hoy</div><div class="swatch" style="margin-top:8px"><div class="swatch-box" style="background:${ndpCol.hex};width:42px;height:42px"></div><div><div class="swatch-name">${ndpCol.n}</div><div class="swatch-sub">Chakra: ${ndpCol.ch}</div><div class="swatch-sub">${ndpCol.a}</div></div></div></div>`;
+  html+=`</div>`;
+  document.getElementById('cardsPersonal').innerHTML=html;
+}
+
+// ════════════════════════════════════════════════════
+// NOMBRE
+// ════════════════════════════════════════════════════
+
+function calcNombre(){
+  const nombre=document.getElementById('nNombre').value.trim();if(!nombre)return;
+  const res=calcNombrePit(nombre);
+  const eData=NUM[res.expresion]||NUM[red(res.expresion,false)];
+  const aData=NUM[res.alma]||NUM[red(res.alma,false)];
+  const pData=NUM[res.personalidad]||NUM[red(res.personalidad,false)];
+  const hoy=new Date();const numD=numFecha(hoy);
+  const compat=Math.max(20,Math.round(100-Math.abs(res.expresion-numD)*11));
+  let html=`<div class="card fade-in"><div class="card-sys">Análisis Pitagórico</div><div class="card-title" style="font-size:16px;margin-bottom:12px">${nombre}</div><div style="font-size:11px;color:var(--muted);line-height:2;word-break:break-all"><div style="margin-bottom:5px;font-size:8px;letter-spacing:3px;color:var(--gold-d)">DESGLOSE</div><div>${res.detalle.map(x=>`<span style="color:${x.tipo==='v'?'var(--gold)':'var(--cream)'};margin-right:5px">${x.c}<sub style="font-size:8px;color:var(--muted)">${x.v}</sub></span>`).join('')}</div><div style="margin-top:8px;font-size:9px">Vocales → <strong style="color:var(--gold)">${res.sumaAlma} = ${res.alma}</strong> | Consonantes → <strong style="color:var(--gold)">${res.sumaPer} = ${res.personalidad}</strong> | Total → <strong style="color:var(--gold)">${res.sumaExp} = ${res.expresion}</strong></div></div><div class="compat-bar"><div class="compat-fill" id="compatFill" style="width:0%"></div></div><div class="card-calc" style="margin-top:5px">Resonancia con la energía del día: ${compat}%</div></div>`;
+  html+=`<div class="nombre-breakdown"><div class="nb-item fade-in" style="animation-delay:0.1s" onclick="dNombreItem(${res.expresion},'expresion')"><div class="nb-num">${res.expresion}</div><div class="nb-lbl">Expresión</div><div class="nb-name">${eData.nombre}</div><div class="nb-kw">${eData.kw}</div><div style="font-size:9px;color:var(--gold-d);margin-top:6px;letter-spacing:2px">↗</div></div><div class="nb-item fade-in" style="animation-delay:0.2s" onclick="dNombreItem(${res.alma},'alma')"><div class="nb-num">${res.alma}</div><div class="nb-lbl">Alma</div><div class="nb-name">${aData.nombre}</div><div class="nb-kw">${aData.kw}</div><div style="font-size:9px;color:var(--gold-d);margin-top:6px;letter-spacing:2px">↗</div></div><div class="nb-item fade-in" style="animation-delay:0.3s" onclick="dNombreItem(${res.personalidad},'personalidad')"><div class="nb-num">${res.personalidad}</div><div class="nb-lbl">Personalidad</div><div class="nb-name">${pData.nombre}</div><div class="nb-kw">${pData.kw}</div><div style="font-size:9px;color:var(--gold-d);margin-top:6px;letter-spacing:2px">↗</div></div></div>`;
+  document.getElementById('cardsNombre').innerHTML=html;
+  setTimeout(()=>{const f=document.getElementById('compatFill');if(f)f.style.width=compat+'%';},300);
+}
+
+// ════════════════════════════════════════════════════
+// CALENDARIO
+// ════════════════════════════════════════════════════
+
+let calYear=new Date().getFullYear(),calMonth=new Date().getMonth();
+let calNacDia=0,calNacMes=0,calNacAnio=0;
+
+function renderCalendario(){
+  calNacDia=parseInt(document.getElementById('calDia').value)||0;
+  calNacMes=parseInt(document.getElementById('calMes').value)||0;
+  calNacAnio=parseInt(document.getElementById('calAnio').value)||0;
+  renderCal();
+}
+
+function navCal(dir){calMonth+=dir;if(calMonth>11){calMonth=0;calYear++;}if(calMonth<0){calMonth=11;calYear--;}renderCal();}
+
+function renderCal(){
+  const meses=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  document.getElementById('calMonthTitle').textContent=meses[calMonth]+' '+calYear;
+  const hoy=new Date();const primerDia=new Date(calYear,calMonth,1).getDay();
+  const diasEnMes=new Date(calYear,calMonth+1,0).getDate();
+  const dias=['D','L','M','M','J','V','S'];
+  let html=dias.map(d=>`<div class="cal-header">${d}</div>`).join('');
+  for(let i=0;i<primerDia;i++)html+=`<div class="cal-day empty"></div>`;
+  let potDia=0;
+  if(calNacDia&&calNacMes&&calNacAnio){
+    let best=0;
+    for(let d=1;d<=diasEnMes;d++){const nD=numFecha(new Date(calYear,calMonth,d));const ap=red(calNacDia+calNacMes+calYear,false);const sc=red(ap+nD,false);if(sc>best){best=sc;potDia=d;}}
+  }
+  for(let d=1;d<=diasEnMes;d++){
+    const fecha=new Date(calYear,calMonth,d);const nD=numFecha(fecha);
+    const col=COLORES[nD]||COLORES[red(nD,false)]||COLORES[1];
+    const esHoy=fecha.toDateString()===hoy.toDateString();const esPico=d===potDia&&potDia>0;
+    html+=`<div class="cal-day${esHoy?' today':''}${esPico?' peak':''}" onclick="openDrawer('Energía del ${d}/${calMonth+1}/${calYear}','Número ${nD}','<div class=\\'deep-section\\'><div class=\\'deep-section-title\\'>Corrientes del día</div><div class=\\'deep-text\\'><p>${(NUM[nD]||NUM[red(nD,false)]).desc}</p></div></div>')">
+      <div class="cal-day-num">${d}</div>
+      <div class="cal-day-vib" style="background:${col.hex}"></div>
+      <div class="cal-day-n">${nD}</div>
+      ${esPico?'<div class="cal-peak-label">↑ pico</div>':''}
+    </div>`;
+  }
+  document.getElementById('calGrid').innerHTML=html;
+}
+
+// ════════════════════════════════════════════════════
+// COMPATIBILIDAD
+// ════════════════════════════════════════════════════
+
+function calcCompat(){
+  const aDia=parseInt(document.getElementById('caDia').value);
+  const aMes=parseInt(document.getElementById('caMes').value);
+  const aAnio=parseInt(document.getElementById('caAnio').value);
+  const bDia=parseInt(document.getElementById('cbDia').value);
+  const bMes=parseInt(document.getElementById('cbMes').value);
+  const bAnio=parseInt(document.getElementById('cbAnio').value);
+  const aNom=document.getElementById('caNombre').value||'Persona A';
+  const bNom=document.getElementById('cbNombre').value||'Persona B';
+  if(!aDia||!aMes||!aAnio||!bDia||!bMes||!bAnio)return;
+
+  const cdvA=red(aDia+aMes+aAnio);const cdvB=red(bDia+bMes+bAnio);
+  const sigA=signoSolar(aMes,aDia);const sigB=signoSolar(bMes,bDia);
+  const kinA=kinMaya(new Date(aAnio,aMes-1,aDia));const kinB=kinMaya(new Date(bAnio,bMes-1,bDia));
+
+  // Score de compatibilidad
+  const difCdv=Math.abs(cdvA-cdvB);
+  const compNum=difCdv===0?100:difCdv<=2?85:difCdv<=4?70:difCdv<=6?55:40;
+  const mismoElemento=sigA.e===sigB.e;const elementoArmonico=(sigA.e==="Fuego"&&sigB.e==="Aire")||(sigA.e==="Tierra"&&sigB.e==="Agua")||(sigA.e==="Aire"&&sigB.e==="Fuego")||(sigA.e==="Agua"&&sigB.e==="Tierra");
+  const compAstro=mismoElemento?90:elementoArmonico?75:50;
+  const difKin=Math.abs((kinA.kin%20)-(kinB.kin%20));
+  const compKin=difKin===0?100:difKin<=3?80:difKin<=7?65:50;
+  const score=Math.round((compNum*0.4+compAstro*0.35+compKin*0.25));
+
+  const desc=score>=80?"Alta resonancia energética. Los campos de estas dos personas se complementan de forma natural. La fricción que pueda existir es generativa, no destructiva.":
+    score>=65?"Resonancia moderada-alta. Hay puntos de encuentro genuinos y también zonas de tensión que, trabajadas con consciencia, pueden ser los espacios de mayor crecimiento.":
+    score>=50?"Resonancia mixta. Las diferencias son más marcadas que las similitudes energéticas, lo que puede ser estimulante o agotador según cómo se gestione.":
+    "Baja resonancia vibracional. No significa incompatibilidad fatal, sino que el vínculo requiere más trabajo consciente para encontrar el lenguaje común.";
+
+  let html=`<div class="compat-result fade-in">
+    <div class="compat-score-wrap"><div class="compat-score">${score}%</div><div class="compat-score-label">Resonancia energética</div></div>
+    <div class="card-desc" style="text-align:center;padding:0 0 16px">${desc}</div>
+  </div>`;
+  html+=`<div class="compat-grid">
+    <div class="compat-item"><div class="compat-item-label">${aNom} · Camino ${cdvA}</div><div class="compat-item-value">${(NUM[cdvA]||NUM[red(cdvA,false)]).nombre}</div><div class="compat-item-desc">${sigA.s} ${sigA.n} · Kin ${kinA.kin} ${kinA.sello.n}</div></div>
+    <div class="compat-item"><div class="compat-item-label">${bNom} · Camino ${cdvB}</div><div class="compat-item-value">${(NUM[cdvB]||NUM[red(cdvB,false)]).nombre}</div><div class="compat-item-desc">${sigB.s} ${sigB.n} · Kin ${kinB.kin} ${kinB.sello.n}</div></div>
+    <div class="compat-item"><div class="compat-item-label">Numerología</div><div class="compat-item-value">${compNum}%</div><div class="compat-item-desc">Caminos de vida ${cdvA} y ${cdvB} ${difCdv===0?'— idénticos':'— diferencia de '+difCdv}</div></div>
+    <div class="compat-item"><div class="compat-item-label">Zodiaco</div><div class="compat-item-value">${compAstro}%</div><div class="compat-item-desc">${sigA.e} + ${sigB.e} — ${mismoElemento?'mismo elemento':elementoArmonico?'elementos armónicos':'elementos en tensión'}</div></div>
+    <div class="compat-item"><div class="compat-item-label">Tzolkin</div><div class="compat-item-value">${compKin}%</div><div class="compat-item-desc">Kin ${kinA.kin} ${kinA.sello.n} con Kin ${kinB.kin} ${kinB.sello.n}</div></div>
+  </div>`;
+  document.getElementById('compatResult').innerHTML=html;
+}
+
+// ════════════════════════════════════════════════════
+// DIARIO
+// ════════════════════════════════════════════════════
+
+function guardarDiario(){
+  const texto=document.getElementById('diarioInput').value.trim();if(!texto)return;
+  const hoy=new Date();const key='brucula_diario';
+  const entries=JSON.parse(localStorage.getItem(key)||'[]');
+  const numD=numFecha(hoy);const kin=kinMaya(hoy);const luna=faselunar(hoy);
+  entries.unshift({fecha:hoy.toISOString(),texto,numD,kinNom:kin.sello.n,lunaNom:luna.n});
+  if(entries.length>90)entries.pop();
+  localStorage.setItem(key,JSON.stringify(entries));
+  document.getElementById('diarioInput').value='';
+  renderDiario();
+}
+
+function renderDiario(){
+  const key='brucula_diario';
+  const entries=JSON.parse(localStorage.getItem(key)||'[]');
+  const dias=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const meses=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  if(!entries.length){document.getElementById('diarioEntries').innerHTML='<div class="diario-empty">Todavía no hay entradas. Las energías que registres aquí quedan guardadas en este dispositivo.</div>';return;}
+  document.getElementById('diarioEntries').innerHTML=entries.map(e=>{
+    const f=new Date(e.fecha);
+    return`<div class="diario-entry"><div class="diario-entry-date">${dias[f.getDay()]}, ${f.getDate()} ${meses[f.getMonth()]} ${f.getFullYear()}</div><div class="diario-entry-nums">№ ${e.numD} · ${e.kinNom} · ${e.lunaNom}</div><div class="diario-entry-text">${e.texto}</div></div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════════════
+// NAVEGACIÓN + INIT
+// ════════════════════════════════════════════════════
+
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelector(`[onclick="showPage('${id}')"]`).classList.add('active');
+  if(id==='diario')renderDiario();
+  if(id==='calendario')renderCal();
+  window.scrollTo(0,0);
+}
+
+function formatFecha(f){
+  const dias=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const meses=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  return`${dias[f.getDay()]}, ${f.getDate()} de ${meses[f.getMonth()]} de ${f.getFullYear()}`;
+}
+
+window.addEventListener('DOMContentLoaded',()=>{
+  const hoy=new Date();
+  document.getElementById('fechaHoy').textContent=formatFecha(hoy);
+  document.getElementById('diarioFechaLabel').textContent='Entrada de hoy — '+formatFecha(hoy);
+  generarGlifo(hoy);
+  renderDia(hoy);
+  renderCal();
+
+  // Actualizar ticker cada minuto
+  setInterval(()=>{
+    const n=new Date();const hp=horaPlanetaria(n);
+    document.getElementById('tickerPlaneta').textContent=hp.planeta.s+' '+hp.planeta.n;
+    document.getElementById('tickerCambio').textContent=hp.minRestantes+'min';
+  },60000);
+});
+
+// Swipe down para cerrar drawer
+let _ty=0;
+document.getElementById('drawer').addEventListener('touchstart',e=>{_ty=e.touches[0].clientY;},{passive:true});
+document.getElementById('drawer').addEventListener('touchmove',e=>{if(e.touches[0].clientY-_ty>60)closeDrawer();},{passive:true});
+</script>
+</body>
+</html>
